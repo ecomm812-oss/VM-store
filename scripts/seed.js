@@ -40,7 +40,7 @@ async function main() {
             description: 'Comfortable cotton t-shirt perfect for everyday wear',
             mrp: 1999,
             price: 1499,
-            images: ['https://example.com/tshirt1.jpg', 'https://example.com/tshirt2.jpg'],
+            images: ['https://picsum.photos/300/300?random=1', 'https://picsum.photos/300/300?random=2'],
             category: 'Clothing',
             storeId: store.id
         }
@@ -52,13 +52,28 @@ async function main() {
             description: 'Stylish slim fit jeans for a modern look',
             mrp: 4999,
             price: 3999,
-            images: ['https://example.com/jeans1.jpg', 'https://example.com/jeans2.jpg'],
+            images: ['https://picsum.photos/300/300?random=3', 'https://picsum.photos/300/300?random=4'],
             category: 'Clothing',
             storeId: store.id
         }
     })
 
     console.log('Sample products created:', { tshirt, jeans })
+
+    // Update images for existing products if any
+    await prisma.product.updateMany({
+        where: { name: 'Classic Cotton T-Shirt' },
+        data: {
+            images: ['https://picsum.photos/300/300?random=1', 'https://picsum.photos/300/300?random=2']
+        }
+    })
+
+    await prisma.product.updateMany({
+        where: { name: 'Slim Fit Lover Jeans' },
+        data: {
+            images: ['https://picsum.photos/300/300?random=3', 'https://picsum.photos/300/300?random=4']
+        }
+    })
 }
 
 main()
