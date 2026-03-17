@@ -1,6 +1,4 @@
 'use client'
-import { assets } from "@/assets/assets"
-import Image from "next/image"
 import { useState } from "react"
 import { toast } from "react-hot-toast"
 
@@ -8,7 +6,7 @@ export default function StoreAddProduct() {
 
     const categories = ['Electronics', 'Clothing', 'Home & Kitchen', 'Beauty & Health', 'Toys & Games', 'Sports & Outdoors', 'Books & Media', 'Food & Drink', 'Hobbies & Crafts', 'Others']
 
-    const [images, setImages] = useState({ 1: null, 2: null, 3: null, 4: null })
+    const [images, setImages] = useState(['', '', '', ''])
     const [productInfo, setProductInfo] = useState({
         name: "",
         description: "",
@@ -23,23 +21,64 @@ export default function StoreAddProduct() {
         setProductInfo({ ...productInfo, [e.target.name]: e.target.value })
     }
 
+    const onImageChange = (index, value) => {
+        const newImages = [...images]
+        newImages[index] = value
+        setImages(newImages)
+    }
+
     const onSubmitHandler = async (e) => {
         e.preventDefault()
-        // Logic to add a product
-        
+        setLoading(true)
+        try {
+            const response = await fetch('/api/products', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...productInfo,
+                    images: images.filter(img => img.trim() !== '')
+                })
+            })
+            if (response.ok) {
+                toast.success('Product added successfully!')
+                setProductInfo({
+                    name: "",
+                    description: "",
+                    mrp: 0,
+                    price: 0,
+                    category: "",
+                })
+                setImages(['', '', '', ''])
+            } else {
+                const error = await response.json()
+                toast.error(error.error || 'Failed to add product')
+            }
+        } catch (error) {
+            toast.error('Failed to add product')
+        } finally {
+            setLoading(false)
+        }
     }
 
 
     return (
         <form onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Adding Product..." })} className="text-slate-500 mb-28">
             <h1 className="text-2xl">Add New <span className="text-slate-800 font-medium">Products</span></h1>
-            <p className="mt-7">Product Images</p>
+            <p className="mt-7">Product Images (URLs)</p>
 
-            <div htmlFor="" className="flex gap-3 mt-4">
-                {Object.keys(images).map((key) => (
-                    <label key={key} htmlFor={`images${key}`}>
-                        <Image width={300} height={300} className='h-15 w-auto border border-slate-200 rounded cursor-pointer' src={images[key] ? URL.createObjectURL(images[key]) : assets.upload_area} alt="" />
-                        <input type="file" accept='image/*' id={`images${key}`} onChange={e => setImages({ ...images, [key]: e.target.files[0] })} hidden />
+            <div className="flex flex-col gap-3 mt-4">
+                {images.map((image, index) => (
+                    <label key={index} className="flex flex-col gap-2">
+                        Image {index + 1} URL
+                        <input 
+                            type="url" 
+                            value={image} 
+                            onChange={e => onImageChange(index, e.target.value)} 
+                            placeholder="Enter image URL" 
+                            className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded" 
+                        />
                     </label>
                 ))}
             </div>

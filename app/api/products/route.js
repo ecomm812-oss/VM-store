@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { currentUser } from '@clerk/nextjs/server'
 
 export async function GET(request) {
     try {
@@ -30,6 +31,46 @@ export async function GET(request) {
         })
 
         return NextResponse.json(products)
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
+export async function POST(request) {
+    try {
+        const clerkUser = await currentUser()
+        if (!clerkUser) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        const store = await prisma.store.findUnique({
+            where: { userId: clerkUser.id }
+        })
+
+        if (!store) {
+            return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+        }
+
+        const body = await request.json()
+        const { name, description, mrp, price, category, images } = body
+
+        if (!name || !description || !mrp || !price || !category || !images || images.length === 0) {
+            return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+        }
+
+        const product = await prisma.product.create({
+            data: {
+                name,
+                description,
+                mrp: parseFloat(mrp),
+                price: parseFloat(price),
+                images,
+                category,
+                storeId: store.id
+            }
+        })
+
+        return NextResponse.json(product, { status: 201 })
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

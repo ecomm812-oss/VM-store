@@ -3,12 +3,24 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 async function main() {
+    // Create a sample user
+    const user = await prisma.user.upsert({
+        where: { id: 'sample-user-id' },
+        update: {},
+        create: {
+            id: 'sample-user-id',
+            name: 'Sample User',
+            email: 'sample@example.com',
+            image: 'https://example.com/image.png'
+        }
+    })
+
     // Create a sample store
     const store = await prisma.store.upsert({
         where: { username: 'happyshop' },
         update: {},
         create: {
-            userId: 'sample-user-id', // You'll need to replace with actual user ID
+            userId: user.id,
             name: 'Happy Shop',
             description: 'Sample store for testing',
             username: 'happyshop',
