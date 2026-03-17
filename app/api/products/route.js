@@ -43,11 +43,11 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const store = await prisma.store.findUnique({
+        const store = await prisma.store.findMany({
             where: { userId: clerkUser.id }
         })
 
-        if (!store) {
+        if (!store || store.length === 0) {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
@@ -66,7 +66,7 @@ export async function POST(request) {
                 price: parseFloat(price),
                 images,
                 category,
-                storeId: store.id
+                storeId: store[0].id
             }
         })
 
