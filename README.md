@@ -1,13 +1,13 @@
 <div align="center">
-  <h1><img src="https://gocartshop.in/favicon.ico" width="20" height="20" alt="VM Cart Favicon">
+  <h1><img src="https://picsum.photos/20/20?random=vmcart" width="20" height="20" alt="VM Cart Favicon">
    VM Cart</h1>
   <p>
     An open-source multi-vendor e-commerce platform built with Next.js and Tailwind CSS.
   </p>
   <p>
-    <a href="https://github.com/GreatStackDev/goCart/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/GreatStackDev/goCart?style=for-the-badge" alt="License"></a>
-    <a href="https://github.com/GreatStackDev/goCart/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
-    <a href="https://github.com/GreatStackDev/goCart/issues"><img src="https://img.shields.io/github/issues/GreatStackDev/goCart?style=for-the-badge" alt="GitHub issues"></a>
+    <a href="https://github.com/ecomm812-oss/VM-store/blob/main/LICENSE.md"><img src="https://img.shields.io/github/license/ecomm812-oss/VM-store?style=for-the-badge" alt="License"></a>
+    <a href="https://github.com/ecomm812-oss/VM-store/pulls"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome"></a>
+    <a href="https://github.com/ecomm812-oss/VM-store/issues"><img src="https://img.shields.io/github/issues/ecomm812-oss/VM-store?style=for-the-badge" alt="GitHub issues"></a>
   </p>
 </div>
 
