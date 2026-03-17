@@ -4,12 +4,14 @@ import AddressModal from './AddressModal';
 import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 
 const OrderSummary = ({ totalPrice, items }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
 
     const router = useRouter();
+    const { user } = useUser();
 
     const addressList = useSelector(state => state.address.list);
 
@@ -27,7 +29,81 @@ const OrderSummary = ({ totalPrice, items }) => {
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
 
-        router.push('/orders')
+        if (!user) {
+            toast.error('Please login to place order');
+            return;
+        }
+
+        if (!selectedAddress) {
+            toast.error('Please select an address');
+            return;
+        }
+
+        const storeId = items[0]?.storeId; // Assuming all items from same store
+
+        const orderData = {
+            total: coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)) : totalPrice,
+            storeId,
+            addressId: selectedAddress.id,
+            paymentMethod,
+            orderItems: items.map(item => ({
+                productId: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                selectedSize: item.selectedSize || 'One Size'
+            })),
+            isCouponUsed: !!coupon,
+            coupon: coupon || {}
+        };
+
+        try {
+            const response = await fetch('/api/orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to place order');
+            }
+
+            const { order, razorpayOrder } = await response.json();
+
+            if (paymentMethod === 'RAZORPAY' && razorpayOrder) {
+                // Open Razorpay checkout
+                const options = {
+                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    amount: razorpayOrder.amount,
+                    currency: razorpayOrder.currency,
+                    name: 'VM Cart',
+                    description: 'Order Payment',
+                    order_id: razorpayOrder.id,
+                    handler: function (response) {
+                        // Payment successful
+                        toast.success('Payment successful!');
+                        router.push('/orders');
+                    },
+                    prefill: {
+                        name: user.firstName + ' ' + user.lastName,
+                        email: user.emailAddresses[0].emailAddress,
+                    },
+                    theme: {
+                        color: '#374151',
+                    },
+                };
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+            } else {
+                // For COD or other methods
+                toast.success('Order placed successfully!');
+                router.push('/orders');
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
 
     return (
@@ -41,6 +117,10 @@ const OrderSummary = ({ totalPrice, items }) => {
             <div className='flex gap-2 items-center mt-1'>
                 <input type="radio" id="STRIPE" name='payment' onChange={() => setPaymentMethod('STRIPE')} checked={paymentMethod === 'STRIPE'} className='accent-gray-500' />
                 <label htmlFor="STRIPE" className='cursor-pointer'>Stripe Payment</label>
+            </div>
+            <div className='flex gap-2 items-center mt-1'>
+                <input type="radio" id="RAZORPAY" name='payment' onChange={() => setPaymentMethod('RAZORPAY')} checked={paymentMethod === 'RAZORPAY'} className='accent-gray-500' />
+                <label htmlFor="RAZORPAY" className='cursor-pointer'>Razorpay Payment</label>
             </div>
             <div className='my-4 py-4 border-y border-slate-200 text-slate-400'>
                 <p>Address</p>

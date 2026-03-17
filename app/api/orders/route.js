@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs/server'
+import Razorpay from 'razorpay'
 
 export async function POST(request) {
     try {
@@ -38,7 +39,23 @@ export async function POST(request) {
             }
         })
 
-        return NextResponse.json(order)
+        let razorpayOrder = null
+        if (paymentMethod === 'RAZORPAY') {
+            const razorpay = new Razorpay({
+                key_id: process.env.RAZORPAY_KEY_ID,
+                key_secret: process.env.RAZORPAY_KEY_SECRET,
+            })
+
+            const options = {
+                amount: Math.round(total * 100), // amount in paisa
+                currency: 'INR',
+                receipt: `order_${order.id}`,
+            }
+
+            razorpayOrder = await razorpay.orders.create(options)
+        }
+
+        return NextResponse.json({ order, razorpayOrder })
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
