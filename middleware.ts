@@ -1,22 +1,7 @@
-import { clerkMiddleware, redirectToSignIn } from "@clerk/nextjs";
+import { clerkMiddleware } from '@clerk/nextjs/server'
 
-export default clerkMiddleware({
-  afterAuth: (req) => {
-    // Redirect to sign in if user is not authenticated
-    if (!req.auth.userId) {
-      return redirectToSignIn({ returnBackUrl: req.url });
-    }
-
-    return;
-  },
-});
+export default clerkMiddleware()
 
 export const config = {
-  matcher: [
-    // Protect API routes and any pages that require auth
-    "/api/:path*",
-    "/store/:path*",
-    "/admin/:path*",
-    "/orders",
-  ],
-};
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+}
