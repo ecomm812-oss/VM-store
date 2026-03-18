@@ -21,15 +21,24 @@ export async function GET() {
 
 export async function POST(request) {
     try {
-        const user = await currentUser()
+        const clerkUser = await currentUser()
         
-        if (!user) {
+        if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Find the user in our database
+        const user = await prisma.user.findUnique({
+            where: { clerkId: clerkUser.id }
+        })
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
         }
 
         const { name, username, description, email, contact, address, logo } = await request.json()
 
-        // Check if user already has a store using findMany instead
+        // Check if user already has a store
         const existingStores = await prisma.store.findMany({
             where: { userId: user.id }
         })

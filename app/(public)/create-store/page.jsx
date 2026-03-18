@@ -4,9 +4,13 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import toast from "react-hot-toast"
 import Loading from "@/components/Loading"
+import { useRouter } from "next/navigation"
+import { useUser } from "@clerk/nextjs"
 
 export default function CreateStore() {
 
+    const router = useRouter()
+    const { user } = useUser()
     const [alreadySubmitted, setAlreadySubmitted] = useState(false)
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
@@ -18,8 +22,7 @@ export default function CreateStore() {
         description: "",
         email: "",
         contact: "",
-        address: "",
-        image: ""
+        address: ""
     })
 
     const onChangeHandler = (e) => {
@@ -27,22 +30,93 @@ export default function CreateStore() {
     }
 
     const fetchSellerStatus = async () => {
-        // Logic to check if the store is already submitted
+        if (!user) return
+        
+        try {
+            // First get the user from our database
+            const userResponse = await fetch('/api/user')
+            if (!userResponse.ok) {
+                console.error('Failed to get user data')
+                setLoading(false)
+                return
+            }
+            const dbUser = await userResponse.json()
 
-
-        setLoading(false)
+            const response = await fetch('/api/admin/stores')
+            if (response.ok) {
+                const stores = await response.json()
+                const userStore = stores.find(store => store.userId === dbUser.id)
+                
+                if (userStore) {
+                    setAlreadySubmitted(true)
+                    setStatus(userStore.status)
+                    if (userStore.status === 'approved') {
+                        setMessage('Your store has been approved! Redirecting to dashboard...')
+                        setTimeout(() => router.push('/store'), 5000)
+                    } else if (userStore.status === 'pending') {
+                        setMessage('Your store is pending approval. Please wait for admin verification.')
+                    } else {
+                        setMessage('Your store application was rejected. Please try again.')
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching seller status:', error)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const onSubmitHandler = async (e) => {
         e.preventDefault()
-        // Logic to submit the store details
+        
+        if (!user) {
+            toast.error('Please login first')
+            return
+        }
 
+        try {
+            const storeData = {
+                name: storeInfo.name,
+                username: storeInfo.username,
+                description: storeInfo.description,
+                email: storeInfo.email,
+                contact: storeInfo.contact,
+                address: storeInfo.address,
+                logo: 'https://via.placeholder.com/200' // Default logo
+            }
 
+            const response = await fetch('/api/admin/stores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(storeData)
+            })
+
+            if (response.ok) {
+                const store = await response.json()
+                toast.success('Store submitted for review!')
+                setAlreadySubmitted(true)
+                setStatus('pending')
+                setMessage('Your store has been submitted for review. Please wait for admin verification.')
+            } else {
+                const error = await response.json()
+                toast.error(error.error || 'Failed to create store')
+            }
+        } catch (error) {
+            toast.error('Error submitting store')
+            console.error(error)
+        }
     }
 
     useEffect(() => {
-        fetchSellerStatus()
-    }, [])
+        if (user) {
+            fetchSellerStatus()
+        } else {
+            setLoading(false)
+        }
+    }, [user])
 
     return !loading ? (
         <>
@@ -57,8 +131,8 @@ export default function CreateStore() {
 
                         <label className="mt-10 cursor-pointer">
                             Store Logo
-                            <Image src={storeInfo.image ? URL.createObjectURL(storeInfo.image) : assets.upload_area} className="rounded-lg mt-2 h-16 w-auto" alt="" width={150} height={100} />
-                            <input type="file" accept="image/*" onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })} hidden />
+                            <Image src={assets.upload_area} className="rounded-lg mt-2 h-16 w-auto" alt="" width={150} height={100} />
+                            {/* <input type="file" accept="image/*" onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })} hidden /> */}
                         </label>
 
                         <p>Username</p>

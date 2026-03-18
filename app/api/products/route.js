@@ -43,8 +43,17 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Find the user in our database
+        const user = await prisma.user.findUnique({
+            where: { clerkId: clerkUser.id }
+        })
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
+        }
+
         const store = await prisma.store.findMany({
-            where: { userId: clerkUser.id }
+            where: { userId: user.id }
         })
 
         if (!store || store.length === 0) {

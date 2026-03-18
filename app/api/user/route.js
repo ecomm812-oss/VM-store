@@ -10,13 +10,13 @@ export async function GET() {
         }
 
         let user = await prisma.user.findUnique({
-            where: { id: clerkUser.id }
+            where: { clerkId: clerkUser.id }
         })
 
         if (!user) {
             user = await prisma.user.create({
                 data: {
-                    id: clerkUser.id,
+                    clerkId: clerkUser.id,
                     name: clerkUser.firstName + ' ' + clerkUser.lastName,
                     email: clerkUser.emailAddresses[0].emailAddress,
                     image: clerkUser.imageUrl
