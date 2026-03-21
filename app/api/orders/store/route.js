@@ -40,7 +40,10 @@ export async function GET(request) {
             orderBy: { createdAt: 'desc' }
         })
 
-        return NextResponse.json(orders)
+        // Filter out orders that don't have orderItems (defensive programming)
+        const validOrders = orders.filter(order => order.orderItems && order.orderItems.length > 0)
+
+        return NextResponse.json(validOrders)
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
@@ -89,7 +92,21 @@ export async function PUT(request) {
 
         const updatedOrder = await prisma.order.update({
             where: { id: orderId },
-            data: { status: status }
+            data: { 
+                status: status,
+                // For COD orders, mark as paid when delivered
+                ...(status === 'DELIVERED' && order.paymentMethod === 'COD' && { isPaid: true })
+            },
+            include: {
+                orderItems: {
+                    include: {
+                        product: true
+                    }
+                },
+                store: true,
+                address: true,
+                user: true
+            }
         })
 
         return NextResponse.json(updatedOrder)

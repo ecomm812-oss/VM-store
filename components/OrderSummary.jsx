@@ -123,10 +123,35 @@ const OrderSummary = ({ totalPrice, items }) => {
                     name: 'VM Cart',
                     description: 'Order Payment',
                     order_id: razorpayOrder.id,
-                    handler: function (response) {
-                        // Payment successful
-                        toast.success('Payment successful!');
-                        router.push('/orders');
+                    handler: async function (response) {
+                        // Payment successful - update order status in backend
+                        try {
+                            const updateResponse = await fetch('/api/orders', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    orderId: order.id,
+                                    isPaid: true,
+                                    razorpayPaymentId: response.razorpay_payment_id,
+                                    razorpayOrderId: response.razorpay_order_id,
+                                    razorpaySignature: response.razorpay_signature
+                                })
+                            });
+
+                            if (!updateResponse.ok) {
+                                const error = await updateResponse.json();
+                                throw new Error(error.error || 'Failed to update payment status');
+                            }
+
+                            toast.success('Payment successful!');
+                            router.push('/orders');
+                        } catch (updateError) {
+                            console.error('Failed to update payment status:', updateError);
+                            toast.error('Payment completed but status update failed. Please contact support.');
+                            router.push('/orders');
+                        }
                     },
                     modal: {
                         ondismiss: function() {

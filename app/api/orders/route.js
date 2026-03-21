@@ -153,7 +153,86 @@ export async function GET() {
             orderBy: { createdAt: 'desc' }
         })
 
-        return NextResponse.json(orders)
+        // Filter out orders that don't have orderItems (defensive programming)
+        const validOrders = orders.filter(order => order.orderItems && order.orderItems.length > 0)
+
+        return NextResponse.json(validOrders)
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
+export async function PUT(request) {
+    try {
+        const clerkUser = await currentUser()
+        if (!clerkUser) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
+        // Find the user in our database
+        const user = await prisma.user.findUnique({
+            where: { clerkId: clerkUser.id }
+        })
+
+        if (!user) {
+            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
+        }
+
+        const { orderId, isPaid, razorpayPaymentId, razorpayOrderId, razorpaySignature } = await request.json()
+
+        if (!orderId) {
+            return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
+        }
+
+        // Verify the order belongs to the user
+        const order = await prisma.order.findFirst({
+            where: {
+                id: orderId,
+                userId: user.id
+            }
+        })
+
+        if (!order) {
+            return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 })
+        }
+
+        // If marking as paid, verify Razorpay payment if payment details provided
+        if (isPaid && order.paymentMethod === 'RAZORPAY') {
+            if (!razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+                return NextResponse.json({ error: 'Payment verification details required for Razorpay payments' }, { status: 400 })
+            }
+
+            // Verify Razorpay payment signature
+            const crypto = await import('crypto')
+            const expectedSignature = crypto
+                .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+                .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+                .digest('hex')
+
+            if (expectedSignature !== razorpaySignature) {
+                return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 })
+            }
+        }
+
+        // Update the order
+        const updatedOrder = await prisma.order.update({
+            where: { id: orderId },
+            data: { 
+                isPaid: isPaid ?? order.isPaid,
+                // You could also store payment details here if needed
+            },
+            include: {
+                orderItems: {
+                    include: {
+                        product: true
+                    }
+                },
+                store: true,
+                address: true
+            }
+        })
+
+        return NextResponse.json(updatedOrder)
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

@@ -1,8 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { currentUser } from '@clerk/nextjs/server'
+
+const isAdminUser = (clerkUser) => {
+    if (!clerkUser) return false
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress?.toLowerCase?.() || ''
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim().toLowerCase()) || []
+    return adminEmails.includes(email)
+}
 
 export async function GET() {
     try {
+        const clerkUser = await currentUser()
+        if (!isAdminUser(clerkUser)) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        }
+
         // Get total products
         const products = await prisma.product.count()
 

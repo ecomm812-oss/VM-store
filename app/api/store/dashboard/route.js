@@ -36,17 +36,32 @@ export async function GET(request) {
             where: { storeId: store.id }
         })
 
-        // Get total earnings from delivered orders
-        const earningsResult = await prisma.order.aggregate({
+        // Get total earnings from paid orders
+        // For Razorpay: count orders where isPaid = true
+        // For COD: count orders where status = 'DELIVERED' (payment received on delivery)
+        const razorpayEarnings = await prisma.order.aggregate({
             _sum: {
                 total: true
             },
             where: {
                 storeId: store.id,
+                paymentMethod: 'RAZORPAY',
+                isPaid: true
+            }
+        })
+
+        const codEarnings = await prisma.order.aggregate({
+            _sum: {
+                total: true
+            },
+            where: {
+                storeId: store.id,
+                paymentMethod: 'COD',
                 status: 'DELIVERED'
             }
         })
-        const totalEarnings = earningsResult._sum.total || 0
+
+        const totalEarnings = (razorpayEarnings._sum.total || 0) + (codEarnings._sum.total || 0)
 
         return NextResponse.json({
             totalProducts,

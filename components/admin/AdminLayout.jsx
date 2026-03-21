@@ -12,8 +12,20 @@ const AdminLayout = ({ children }) => {
     const [loading, setLoading] = useState(true)
 
     const fetchIsAdmin = async () => {
-        setIsAdmin(true)
-        setLoading(false)
+        try {
+            const response = await fetch('/api/admin/auth')
+            if (response.ok) {
+                const data = await response.json()
+                setIsAdmin(data.isAdmin === true)
+            } else {
+                setIsAdmin(false)
+            }
+        } catch (error) {
+            console.error('Admin auth check failed:', error)
+            setIsAdmin(false)
+        } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
@@ -34,10 +46,16 @@ const AdminLayout = ({ children }) => {
         </div>
     ) : (
         <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-2xl sm:text-4xl font-semibold text-slate-400">You are not authorized to access this page</h1>
-            <Link href="/" className="bg-slate-700 text-white flex items-center gap-2 mt-8 p-2 px-6 max-sm:text-sm rounded-full">
-                Go to home <ArrowRightIcon size={18} />
-            </Link>
+            <h1 className="text-2xl sm:text-4xl font-semibold text-slate-400">Admin access required</h1>
+            <p className="mt-3 text-slate-500">You must be logged in as an administrator to access this section.</p>
+            <div className="mt-6 flex flex-col gap-3">
+                <Link href="/admin/login" className="bg-blue-600 text-white px-6 py-2 rounded-full">
+                    Admin Login
+                </Link>
+                <Link href="/" className="text-slate-700 px-6 py-2 rounded-full border border-slate-200">
+                    Return Home
+                </Link>
+            </div>
         </div>
     )
 }
