@@ -9,13 +9,21 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Find the user in our database
-        const user = await prisma.user.findUnique({
+        // Find the user in our database, or create if not exists
+        let user = await prisma.user.findUnique({
             where: { clerkId: clerkUser.id }
         })
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
+            // Create user if they don't exist
+            user = await prisma.user.create({
+                data: {
+                    clerkId: clerkUser.id,
+                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
+                    email: clerkUser.emailAddresses[0].emailAddress,
+                    image: clerkUser.imageUrl
+                }
+            })
         }
 
         const store = await prisma.store.findUnique({

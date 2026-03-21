@@ -9,12 +9,19 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const user = await prisma.user.findUnique({
+        // Auto-create user if not exists
+        let user = await prisma.user.findUnique({
             where: { clerkId: clerkUser.id }
         })
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
+            user = await prisma.user.create({
+                data: {
+                    clerkId: clerkUser.id,
+                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
+                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
+                }
+            })
         }
 
         const store = await prisma.store.findUnique({
@@ -56,12 +63,19 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const user = await prisma.user.findUnique({
+        // Auto-create user if not exists
+        let user = await prisma.user.findUnique({
             where: { clerkId: clerkUser.id }
         })
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
+            user = await prisma.user.create({
+                data: {
+                    clerkId: clerkUser.id,
+                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
+                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
+                }
+            })
         }
 
         const store = await prisma.store.findUnique({
