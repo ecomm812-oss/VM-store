@@ -2,19 +2,43 @@
 import PageTitle from "@/components/PageTitle"
 import { useEffect, useState } from "react";
 import OrderItem from "@/components/OrderItem";
-import { orderDummyData } from "@/assets/assets";
+import { toast } from "react-hot-toast";
+import Loading from "@/components/Loading";
 
 export default function Orders() {
 
     const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setOrders(orderDummyData)
+        const fetchOrders = async () => {
+            try {
+                const response = await fetch('/api/orders', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                if (response.ok) {
+                    const data = await response.json()
+                    setOrders(data)
+                } else {
+                    toast.error('Failed to fetch orders')
+                }
+            } catch (error) {
+                toast.error('Failed to fetch orders')
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchOrders()
     }, []);
 
     return (
         <div className="min-h-[70vh] mx-6">
-            {orders.length > 0 ? (
+            {loading ? (
+                <Loading />
+            ) : orders.length > 0 ? (
                 (
                     <div className="my-20 max-w-7xl mx-auto">
                         <PageTitle heading="My Orders" text={`Showing total ${orders.length} orders`} linkText={'Go to home'} />

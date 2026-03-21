@@ -3,24 +3,58 @@ import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
 import Image from "next/image"
 import Loading from "@/components/Loading"
-import { productDummyData } from "@/assets/assets"
 
 export default function StoreManageProducts() {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$'
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
 
     const fetchProducts = async () => {
-        setProducts(productDummyData)
-        setLoading(false)
+        try {
+            const response = await fetch('/api/products/store', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setProducts(data)
+            } else {
+                toast.error('Failed to fetch products')
+            }
+        } catch (error) {
+            toast.error('Failed to fetch products')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const toggleStock = async (productId) => {
-        // Logic to toggle the stock of a product
+        const product = products.find(p => p.id === productId)
+        if (!product) throw new Error('Product not found')
 
+        const response = await fetch('/api/products/store', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productId: productId,
+                inStock: !product.inStock
+            })
+        })
 
+        if (response.ok) {
+            const updatedProduct = await response.json()
+            setProducts(products.map(p => p.id === productId ? updatedProduct : p))
+            return updatedProduct
+        } else {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to update product stock')
+        }
     }
 
     useEffect(() => {
@@ -56,7 +90,7 @@ export default function StoreManageProducts() {
                             <td className="px-4 py-3">{currency} {product.price.toLocaleString()}</td>
                             <td className="px-4 py-3 text-center">
                                 <label className="relative inline-flex items-center cursor-pointer text-gray-900 gap-3">
-                                    <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleStock(product.id), { loading: "Updating data..." })} checked={product.inStock} />
+                                    <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleStock(product.id), { loading: "Updating stock...", success: "Stock updated!", error: "Failed to update stock" })} checked={product.inStock} />
                                     <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
                                     <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
                                 </label>

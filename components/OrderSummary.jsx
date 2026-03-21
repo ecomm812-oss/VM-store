@@ -1,17 +1,19 @@
 import { PlusIcon, SquarePenIcon, XIcon } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import AddressModal from './AddressModal';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import { addAddress } from '@/lib/features/address/addressSlice';
 
 const OrderSummary = ({ totalPrice, items }) => {
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '$';
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
 
     const router = useRouter();
     const { user } = useUser();
+    const dispatch = useDispatch();
 
     const addressList = useSelector(state => state.address.list);
 
@@ -20,6 +22,33 @@ const OrderSummary = ({ totalPrice, items }) => {
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [couponCodeInput, setCouponCodeInput] = useState('');
     const [coupon, setCoupon] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    // Fetch addresses from API on component mount
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            try {
+                const response = await fetch('/api/user/address');
+                if (response.ok) {
+                    const addresses = await response.json();
+                    // Update Redux store with fetched addresses
+                    addresses.forEach(address => {
+                        if (!addressList.find(a => a.id === address.id)) {
+                            dispatch(addAddress(address));
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to fetch addresses:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchAddresses();
+        }
+    }, [user, dispatch, addressList]);
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
@@ -73,9 +102,22 @@ const OrderSummary = ({ totalPrice, items }) => {
             const { order, razorpayOrder } = await response.json();
 
             if (paymentMethod === 'RAZORPAY' && razorpayOrder) {
+                // Verify Razorpay key is available
+                const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+                if (!razorpayKeyId) {
+                    toast.error('Payment configuration error. Please contact support.');
+                    return;
+                }
+
+                // Check if Razorpay script is loaded
+                if (!window.Razorpay) {
+                    toast.error('Payment system not initialized. Please refresh the page.');
+                    return;
+                }
+
                 // Open Razorpay checkout
                 const options = {
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                    key: razorpayKeyId,
                     amount: razorpayOrder.amount,
                     currency: razorpayOrder.currency,
                     name: 'VM Cart',
@@ -86,6 +128,11 @@ const OrderSummary = ({ totalPrice, items }) => {
                         toast.success('Payment successful!');
                         router.push('/orders');
                     },
+                    modal: {
+                        ondismiss: function() {
+                            toast.error('Payment cancelled');
+                        }
+                    },
                     prefill: {
                         name: user.firstName + ' ' + user.lastName,
                         email: user.emailAddresses[0].emailAddress,
@@ -94,8 +141,17 @@ const OrderSummary = ({ totalPrice, items }) => {
                         color: '#374151',
                     },
                 };
-                const rzp = new window.Razorpay(options);
-                rzp.open();
+                
+                try {
+                    const rzp = new window.Razorpay(options);
+                    rzp.on('payment.failed', function (response) {
+                        toast.error(`Payment failed: ${response.error.description}`);
+                    });
+                    rzp.open();
+                } catch (error) {
+                    toast.error('Failed to initialize payment. Please try again.');
+                    console.error('Razorpay error:', error);
+                }
             } else {
                 // For COD or other methods
                 toast.success('Order placed successfully!');

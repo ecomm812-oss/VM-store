@@ -30,8 +30,30 @@ export async function GET(request) {
             }
         })
 
-        return NextResponse.json(products)
+        // Validate products - filter out any with missing required fields
+        const validProducts = products.filter(product => {
+            return (
+                product &&
+                product.id &&
+                product.name &&
+                product.price !== undefined &&
+                product.images &&
+                Array.isArray(product.images) &&
+                product.images.length > 0 &&
+                product.category &&
+                product.storeId &&
+                product.store &&
+                product.store.id
+            )
+        })
+
+        if (validProducts.length < products.length) {
+            console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
+        }
+
+        return NextResponse.json(validProducts)
     } catch (error) {
+        console.error('[API] Error fetching products:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
@@ -52,11 +74,11 @@ export async function POST(request) {
             return NextResponse.json({ error: 'User not found. Please refresh and try again.' }, { status: 404 })
         }
 
-        const store = await prisma.store.findMany({
+        const store = await prisma.store.findUnique({
             where: { userId: user.id }
         })
 
-        if (!store || store.length === 0) {
+        if (!store) {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
@@ -75,7 +97,7 @@ export async function POST(request) {
                 price: parseFloat(price),
                 images,
                 category,
-                storeId: store[0].id
+                storeId: store.id
             }
         })
 

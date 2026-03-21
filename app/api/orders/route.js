@@ -21,6 +21,51 @@ export async function POST(request) {
 
         const { total, storeId, addressId, paymentMethod, orderItems, isCouponUsed, coupon } = await request.json()
 
+        // Validate required fields
+        if (!total || !storeId || !addressId || !paymentMethod || !orderItems || orderItems.length === 0) {
+            return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
+        }
+
+        // Validate that the address exists and belongs to the user
+        const address = await prisma.address.findFirst({
+            where: {
+                id: addressId,
+                userId: user.id
+            }
+        })
+
+        if (!address) {
+            return NextResponse.json({ error: 'Invalid address. Please select a valid address.' }, { status: 400 })
+        }
+
+        // Validate that the store exists
+        const store = await prisma.store.findUnique({
+            where: { id: storeId }
+        })
+
+        if (!store) {
+            return NextResponse.json({ error: 'Invalid store' }, { status: 400 })
+        }
+
+        // Validate that all products exist and are in stock
+        for (const item of orderItems) {
+            const product = await prisma.product.findUnique({
+                where: { id: item.productId }
+            })
+
+            if (!product) {
+                return NextResponse.json({ error: `Product ${item.productId} not found` }, { status: 400 })
+            }
+
+            if (!product.inStock) {
+                return NextResponse.json({ error: `Product ${product.name} is out of stock` }, { status: 400 })
+            }
+
+            if (product.storeId !== storeId) {
+                return NextResponse.json({ error: `Product ${product.name} does not belong to this store` }, { status: 400 })
+            }
+        }
+
         const order = await prisma.order.create({
             data: {
                 total,
@@ -50,18 +95,35 @@ export async function POST(request) {
 
         let razorpayOrder = null
         if (paymentMethod === 'RAZORPAY') {
-            const razorpay = new Razorpay({
-                key_id: process.env.RAZORPAY_KEY_ID,
-                key_secret: process.env.RAZORPAY_KEY_SECRET,
-            })
+            // Validate Razorpay credentials
+            const razorpayKeyId = process.env.RAZORPAY_KEY_ID
+            const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET
 
-            const options = {
-                amount: Math.round(total * 100), // amount in paisa
-                currency: 'INR',
-                receipt: `order_${order.id}`,
+            if (!razorpayKeyId || !razorpayKeySecret) {
+                return NextResponse.json({ 
+                    error: 'Payment gateway configuration error. Please contact support.' 
+                }, { status: 500 })
             }
 
-            razorpayOrder = await razorpay.orders.create(options)
+            try {
+                const razorpay = new Razorpay({
+                    key_id: razorpayKeyId,
+                    key_secret: razorpayKeySecret,
+                })
+
+                const options = {
+                    amount: Math.round(total * 100), // amount in paisa
+                    currency: 'INR',
+                    receipt: `order_${order.id}`,
+                }
+
+                razorpayOrder = await razorpay.orders.create(options)
+            } catch (razorpayError) {
+                console.error('Razorpay Error:', razorpayError)
+                return NextResponse.json({ 
+                    error: `Payment gateway error: ${razorpayError.message}` 
+                }, { status: 500 })
+            }
         }
 
         return NextResponse.json({ order, razorpayOrder })

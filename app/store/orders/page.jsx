@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from "react"
+import { toast } from "react-hot-toast"
 import Loading from "@/components/Loading"
-import { orderDummyData } from "@/assets/assets"
 
 export default function StoreOrders() {
     const [orders, setOrders] = useState([])
@@ -11,14 +11,46 @@ export default function StoreOrders() {
 
 
     const fetchOrders = async () => {
-       setOrders(orderDummyData)
-       setLoading(false)
+        try {
+            const response = await fetch('/api/orders/store', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            if (response.ok) {
+                const data = await response.json()
+                setOrders(data)
+            } else {
+                toast.error('Failed to fetch orders')
+            }
+        } catch (error) {
+            toast.error('Failed to fetch orders')
+        } finally {
+            setLoading(false)
+        }
     }
 
     const updateOrderStatus = async (orderId, status) => {
-        // Logic to update the status of an order
+        const response = await fetch('/api/orders/store', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                status: status
+            })
+        })
 
-
+        if (response.ok) {
+            const updatedOrder = await response.json()
+            setOrders(orders.map(o => o.id === orderId ? updatedOrder : o))
+            return updatedOrder
+        } else {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to update order status')
+        }
     }
 
     const openModal = (order) => {
@@ -77,7 +109,7 @@ export default function StoreOrders() {
                                     <td className="px-4 py-3" onClick={(e) => { e.stopPropagation() }}>
                                         <select
                                             value={order.status}
-                                            onChange={e => updateOrderStatus(order.id, e.target.value)}
+                                            onChange={e => toast.promise(updateOrderStatus(order.id, e.target.value), { loading: "Updating status...", success: "Status updated!", error: (err) => err.message })}
                                             className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
                                         >
                                             <option value="ORDER_PLACED">ORDER_PLACED</option>

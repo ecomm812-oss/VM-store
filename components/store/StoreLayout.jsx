@@ -5,7 +5,6 @@ import Link from "next/link"
 import { ArrowRightIcon } from "lucide-react"
 import SellerNavbar from "./StoreNavbar"
 import SellerSidebar from "./StoreSidebar"
-import { dummyStoreData } from "@/assets/assets"
 
 const StoreLayout = ({ children }) => {
 
@@ -15,9 +14,21 @@ const StoreLayout = ({ children }) => {
     const [storeInfo, setStoreInfo] = useState(null)
 
     const fetchIsSeller = async () => {
-        setIsSeller(true)
-        setStoreInfo(dummyStoreData)
-        setLoading(false)
+        try {
+            const response = await fetch('/api/store/info')
+            if (response.ok) {
+                const storeData = await response.json()
+                setStoreInfo(storeData)
+                setIsSeller(true)
+            } else {
+                setIsSeller(false)
+            }
+        } catch (error) {
+            console.error('Error fetching store info:', error)
+            setIsSeller(false)
+        } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
