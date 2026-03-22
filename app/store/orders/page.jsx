@@ -14,6 +14,9 @@ export default function StoreOrders() {
     const [currentLocation, setCurrentLocation] = useState('')
     const [estimatedDelivery, setEstimatedDelivery] = useState('')
 
+    useEffect(() => {
+        fetchOrders()
+    }, [])
 
     const fetchOrders = async () => {
         try {
@@ -103,8 +106,13 @@ export default function StoreOrders() {
         setTrackingUrl(order.trackingUrl || '');
         setCurrentLocation(order.currentLocation || '');
         setEstimatedDelivery(order.estimatedDelivery ? new Date(order.estimatedDelivery).toISOString().split('T')[0] : '');
+        setIsModalOpen(true);
+    }
 
-    return (
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setSelectedOrder(null);
+    }
         <>
             <h1 className="text-2xl text-slate-500 mb-5">Store <span className="text-slate-800 font-medium">Orders</span></h1>
             {orders.length === 0 ? (
