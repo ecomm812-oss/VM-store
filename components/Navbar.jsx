@@ -1,5 +1,5 @@
 'use client'
-import { Search, ShoppingCart } from "lucide-react";
+import { Search, ShoppingCart, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,11 +12,21 @@ const Navbar = () => {
     const { isSignedIn } = useUser();
 
     const [search, setSearch] = useState('')
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const cartCount = useSelector(state => state.cart.total)
 
     const handleSearch = (e) => {
         e.preventDefault()
         router.push(`/shop?search=${search}`)
+        setIsMobileMenuOpen(false) // Close mobile menu after search
+    }
+
+    const toggleMobileMenu = () => {
+        setIsMobileMenuOpen(!isMobileMenuOpen)
+    }
+
+    const closeMobileMenu = () => {
+        setIsMobileMenuOpen(false)
     }
 
     return (
@@ -69,13 +79,25 @@ const Navbar = () => {
 
                     </div>
 
-                    {/* Mobile User Button  */}
-                    <div className="sm:hidden animate-fadeIn">
+                    {/* Mobile Menu Button & User Button */}
+                    <div className="sm:hidden flex items-center gap-3">
+                        {/* Mobile Menu Toggle Button */}
+                        <button
+                            onClick={toggleMobileMenu}
+                            className="p-2 text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-110 active:scale-95"
+                            aria-label="Toggle mobile menu"
+                        >
+                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+
+                        {/* Mobile User Button */}
                         {isSignedIn ? (
-                            <UserButton />
+                            <div className="animate-fadeIn">
+                                <UserButton />
+                            </div>
                         ) : (
                             <SignInButton mode="modal">
-                                <button className="px-7 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition-all duration-300 text-white rounded-full btn-primary">
+                                <button className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition-all duration-300 text-white rounded-full btn-primary">
                                     Login
                                 </button>
                             </SignInButton>
@@ -83,6 +105,92 @@ const Navbar = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Mobile Menu Overlay */}
+            {isMobileMenuOpen && (
+                <div className="sm:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fadeIn" onClick={closeMobileMenu}>
+                    <div
+                        className="absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-white shadow-xl animate-slideInRight"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="p-6">
+                            {/* Mobile Search */}
+                            <form onSubmit={handleSearch} className="mb-6">
+                                <div className="flex items-center gap-2 bg-slate-100 px-4 py-3 rounded-full">
+                                    <Search size={18} className="text-slate-600" />
+                                    <input
+                                        className="w-full bg-transparent outline-none placeholder-slate-600"
+                                        type="text"
+                                        placeholder="Search products"
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </form>
+
+                            {/* Mobile Navigation Links */}
+                            <div className="space-y-4">
+                                <Link
+                                    href="/"
+                                    onClick={closeMobileMenu}
+                                    className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                >
+                                    Home
+                                </Link>
+                                <Link
+                                    href="/shop"
+                                    onClick={closeMobileMenu}
+                                    className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                >
+                                    Shop
+                                </Link>
+                                <Link
+                                    href="/"
+                                    onClick={closeMobileMenu}
+                                    className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                >
+                                    About
+                                </Link>
+                                <Link
+                                    href="/"
+                                    onClick={closeMobileMenu}
+                                    className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                >
+                                    Contact
+                                </Link>
+
+                                {/* Mobile Cart Link */}
+                                <Link
+                                    href="/cart"
+                                    onClick={closeMobileMenu}
+                                    className="flex items-center justify-between py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                >
+                                    <span className="flex items-center gap-2">
+                                        <ShoppingCart size={18} />
+                                        Cart
+                                    </span>
+                                    <span className="bg-slate-600 text-white text-xs px-2 py-1 rounded-full">
+                                        {cartCount}
+                                    </span>
+                                </Link>
+
+                                {/* Mobile My Orders Link */}
+                                {isSignedIn && (
+                                    <Link
+                                        href="/orders"
+                                        onClick={closeMobileMenu}
+                                        className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+                                    >
+                                        My Orders
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <hr className="border-gray-300" />
         </nav>
     )
