@@ -4,7 +4,7 @@ import { currentUser } from '@clerk/nextjs/server'
 
 export async function GET(request, { params }) {
     try {
-        const { orderId } = params
+        const { orderId } = await params
         const clerkUser = await currentUser()
 
         if (!clerkUser) {
