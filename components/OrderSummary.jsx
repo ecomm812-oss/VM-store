@@ -105,7 +105,7 @@ const OrderSummary = ({ totalPrice, items }) => {
                 // Verify Razorpay key is available
                 const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
                 if (!razorpayKeyId) {
-                    toast.error('Payment configuration error. Please contact support.');
+                    toast.error('Razorpay is not configured on this frontend. Please contact support.');
                     return;
                 }
 

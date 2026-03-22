@@ -20,40 +20,48 @@ const Navbar = () => {
     }
 
     return (
-        <nav className="relative bg-white">
+        <nav className="relative bg-white animate-slideInDown">
             <div className="mx-6">
-                <div className="flex items-center justify-between max-w-7xl mx-auto py-4  transition-all">
+                <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
 
-                    <Link href="/" className="relative text-4xl font-semibold text-slate-700">
+                    <Link href="/" className="relative text-4xl font-semibold text-slate-700 transition-transform duration-300 hover:scale-105">
                         <span className="text-green-600">VM</span>cart<span className="text-green-600 text-5xl leading-0">.</span>
-                        <p className="absolute text-xs font-semibold -top-1 -right-8 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500">
+                        <p className="absolute text-xs font-semibold -top-1 -right-8 px-3 p-0.5 rounded-full flex items-center gap-2 text-white bg-green-500 animate-pulse">
                             plus
                         </p>
                     </Link>
 
                     {/* Desktop Menu */}
                     <div className="hidden sm:flex items-center gap-4 lg:gap-8 text-slate-600">
-                        <Link href="/">Home</Link>
-                        <Link href="/shop">Shop</Link>
-                        <Link href="/">About</Link>
-                        <Link href="/">Contact</Link>
+                        <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Home</Link>
+                        <Link href="/shop" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Shop</Link>
+                        <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">About</Link>
+                        <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Contact</Link>
 
-                        <form onSubmit={handleSearch} className="hidden xl:flex items-center w-xs text-sm gap-2 bg-slate-100 px-4 py-3 rounded-full">
-                            <Search size={18} className="text-slate-600" />
-                            <input className="w-full bg-transparent outline-none placeholder-slate-600" type="text" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
+                        <form onSubmit={handleSearch} className="hidden xl:flex items-center w-xs text-sm gap-2 bg-slate-100 px-4 py-3 rounded-full transition-all duration-300 hover:bg-slate-200 focus-within:bg-white focus-within:shadow-md">
+                            <Search size={18} className="text-slate-600 transition-colors duration-300" />
+                            <input className="w-full bg-transparent outline-none placeholder-slate-600 transition-colors duration-300" type="text" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
                         </form>
 
-                        <Link href="/cart" className="relative flex items-center gap-2 text-slate-600">
-                            <ShoppingCart size={18} />
+                        <Link href="/cart" className="relative flex items-center gap-2 text-slate-600 transition-all duration-300 hover:text-slate-800 hover:scale-105 group">
+                            <ShoppingCart size={18} className="group-hover:animate-bounce-custom" />
                             Cart
-                            <button className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full">{cartCount}</button>
+                            <button className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full transition-transform duration-300 group-hover:scale-125 animate-pulse-custom">{cartCount}</button>
                         </Link>
 
+                        {isSignedIn && (
+                            <Link href="/orders" className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-105">
+                                My Orders
+                            </Link>
+                        )}
+
                         {isSignedIn ? (
-                            <UserButton />
+                            <div className="animate-fadeIn">
+                                <UserButton />
+                            </div>
                         ) : (
                             <SignInButton mode="modal">
-                                <button className="px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition text-white rounded-full">
+                                <button className="px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition-all duration-300 text-white rounded-full btn-primary hover:shadow-lg">
                                     Login
                                 </button>
                             </SignInButton>
@@ -62,12 +70,12 @@ const Navbar = () => {
                     </div>
 
                     {/* Mobile User Button  */}
-                    <div className="sm:hidden">
+                    <div className="sm:hidden animate-fadeIn">
                         {isSignedIn ? (
                             <UserButton />
                         ) : (
                             <SignInButton mode="modal">
-                                <button className="px-7 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition text-white rounded-full">
+                                <button className="px-7 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition-all duration-300 text-white rounded-full btn-primary">
                                     Login
                                 </button>
                             </SignInButton>

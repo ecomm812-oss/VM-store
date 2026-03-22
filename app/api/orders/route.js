@@ -74,6 +74,18 @@ export async function POST(request) {
             }
         }
 
+        // If Razorpay is selected, validate credentials before creating the order record.
+        if (paymentMethod === 'RAZORPAY') {
+            const razorpayKeyId = process.env.RAZORPAY_KEY_ID
+            const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET
+
+            if (!razorpayKeyId || !razorpayKeySecret) {
+                return NextResponse.json({
+                    error: 'Razorpay is not configured on the server. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in .env and restart.',
+                }, { status: 500 })
+            }
+        }
+
         const order = await prisma.order.create({
             data: {
                 total,
@@ -103,13 +115,13 @@ export async function POST(request) {
 
         let razorpayOrder = null
         if (paymentMethod === 'RAZORPAY') {
-            // Validate Razorpay credentials
             const razorpayKeyId = process.env.RAZORPAY_KEY_ID
             const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET
 
+            // Already validated above; this is just a fallback
             if (!razorpayKeyId || !razorpayKeySecret) {
-                return NextResponse.json({ 
-                    error: 'Payment gateway configuration error. Please contact support.' 
+                return NextResponse.json({
+                    error: 'Razorpay is not configured on the server. Please contact support.',
                 }, { status: 500 })
             }
 
@@ -147,8 +159,23 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Auto-create user if not exists
+        let user = await prisma.user.findUnique({
+            where: { clerkId: clerkUser.id }
+        })
+
+        if (!user) {
+            user = await prisma.user.create({
+                data: {
+                    clerkId: clerkUser.id,
+                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
+                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
+                }
+            })
+        }
+
         const orders = await prisma.order.findMany({
-            where: { userId: clerkUser.id },
+            where: { userId: user.id },
             include: {
                 orderItems: {
                     include: {

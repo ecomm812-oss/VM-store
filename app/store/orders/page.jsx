@@ -2,12 +2,17 @@
 import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
 import Loading from "@/components/Loading"
+import { TruckIcon, MapPinIcon, ClockIcon } from "lucide-react"
 
 export default function StoreOrders() {
     const [orders, setOrders] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [trackingNumber, setTrackingNumber] = useState('')
+    const [trackingUrl, setTrackingUrl] = useState('')
+    const [currentLocation, setCurrentLocation] = useState('')
+    const [estimatedDelivery, setEstimatedDelivery] = useState('')
 
 
     const fetchOrders = async () => {
@@ -53,6 +58,34 @@ export default function StoreOrders() {
         }
     }
 
+    const updateTrackingInfo = async () => {
+        if (!selectedOrder) return;
+
+        const response = await fetch('/api/orders/store/tracking', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                orderId: selectedOrder.id,
+                trackingNumber,
+                trackingUrl,
+                currentLocation,
+                estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null
+            })
+        })
+
+        if (response.ok) {
+            const updatedOrder = await response.json()
+            setOrders(orders.map(o => o.id === selectedOrder.id ? updatedOrder : o))
+            setSelectedOrder(updatedOrder)
+            toast.success('Tracking information updated!')
+        } else {
+            const error = await response.json()
+            toast.error(error.error || 'Failed to update tracking information')
+        }
+    }
+
     const openModal = (order) => {
         // Defensive check to ensure order has required properties
         if (!order || !order.id) {
@@ -66,19 +99,10 @@ export default function StoreOrders() {
         }
         
         setSelectedOrder(order);
-        setIsModalOpen(true);
-    }
-
-    const closeModal = () => {
-        setSelectedOrder(null)
-        setIsModalOpen(false)
-    }
-
-    useEffect(() => {
-        fetchOrders()
-    }, [])
-
-    if (loading) return <Loading />
+        setTrackingNumber(order.trackingNumber || '');
+        setTrackingUrl(order.trackingUrl || '');
+        setCurrentLocation(order.currentLocation || '');
+        setEstimatedDelivery(order.estimatedDelivery ? new Date(order.estimatedDelivery).toISOString().split('T')[0] : '');
 
     return (
         <>
@@ -127,6 +151,7 @@ export default function StoreOrders() {
                                             <option value="PROCESSING">PROCESSING</option>
                                             <option value="SHIPPED">SHIPPED</option>
                                             <option value="DELIVERED">DELIVERED</option>
+                                            <option value="CANCELLED">CANCELLED</option>
                                         </select>
                                     </td>
                                     <td className="px-4 py-3 text-gray-500">
@@ -191,6 +216,69 @@ export default function StoreOrders() {
                             )}
                             <p><span className="text-green-700">Status:</span> {selectedOrder.status}</p>
                             <p><span className="text-green-700">Order Date:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
+                        </div>
+
+                        {/* Tracking Information */}
+                        <div className="mb-4">
+                            <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                <TruckIcon className="w-5 h-5" />
+                                Tracking Information
+                            </h3>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Tracking Number
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={trackingNumber}
+                                        onChange={(e) => setTrackingNumber(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter tracking number"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Tracking URL
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={trackingUrl}
+                                        onChange={(e) => setTrackingUrl(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="https://tracking.example.com/..."
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Current Location
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={currentLocation}
+                                        onChange={(e) => setCurrentLocation(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Current location of the package"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Estimated Delivery Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={estimatedDelivery}
+                                        onChange={(e) => setEstimatedDelivery(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <button
+                                    onClick={updateTrackingInfo}
+                                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                                >
+                                    Update Tracking Information
+                                </button>
+                            </div>
                         </div>
 
                         {/* Actions */}
