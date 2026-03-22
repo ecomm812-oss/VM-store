@@ -113,6 +113,8 @@ export default function StoreOrders() {
         setIsModalOpen(false);
         setSelectedOrder(null);
     }
+
+    return (
         <>
             <h1 className="text-2xl text-slate-500 mb-5">Store <span className="text-slate-800 font-medium">Orders</span></h1>
             {orders.length === 0 ? (
