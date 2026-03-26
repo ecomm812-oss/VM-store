@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import { ClerkProvider } from '@clerk/nextjs';
 import AppInitializer from "@/components/AppInitializer";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
                         <Toaster />
                         {children}
                     </StoreProvider>
+                    <Analytics />
                 </body>
             </html>
         </ClerkProvider>
