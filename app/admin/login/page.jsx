@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { SignIn } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs'
 import { useEffect } from 'react'
+import { toast } from 'react-hot-toast'
 import Loading from '@/components/Loading'
 
 export default function AdminLoginPage() {
@@ -10,14 +11,20 @@ export default function AdminLoginPage() {
   const { isSignedIn, user, isLoaded } = useUser()
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
+    if (!isLoaded) return
+
+    if (isSignedIn && user) {
       const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || ''
-      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim().toLowerCase()) || []
+      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
       
+      if (adminEmails.length === 0) {
+        console.warn('NEXT_PUBLIC_ADMIN_EMAILS is not set. Set a comma-separated admin email list.')
+      }
+
       if (adminEmails.includes(userEmail)) {
         router.push('/admin')
       } else {
-        // User is logged in but not admin
+        toast?.error?.(`Your account (${userEmail}) is not configured for admin access.`)
         setTimeout(() => {
           router.push('/')
         }, 2000)
@@ -29,15 +36,16 @@ export default function AdminLoginPage() {
     return <Loading />
   }
 
+  const userEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase?.() || ''
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || '').split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
+
   if (isSignedIn && user) {
-    const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || ''
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim().toLowerCase()) || []
-    
     if (adminEmails.includes(userEmail)) {
       return <Loading />
-    } else {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+    }
+
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
           <div className="text-center">
             <h1 className="text-2xl font-semibold text-red-600 mb-4">Access Denied</h1>
             <p className="text-slate-600 mb-4">Your email ({userEmail}) is not authorized for admin access.</p>

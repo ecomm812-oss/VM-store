@@ -1,21 +1,49 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs/server'
+import { isAdminUser, createSecureErrorResponse } from '@/lib/security'
 
 export async function GET() {
     try {
+        // Check admin authentication
+        const isAdmin = await isAdminUser()
+        if (!isAdmin) {
+            return createSecureErrorResponse('admin access', 403)
+        }
+
         const stores = await prisma.store.findMany({
             include: {
-                user: true,
-                Product: true,
-                Order: true
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        clerkId: true
+                    }
+                },
+                Product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        inStock: true
+                    }
+                },
+                Order: {
+                    select: {
+                        id: true,
+                        total: true,
+                        status: true,
+                        createdAt: true
+                    }
+                }
             }
         })
 
         return NextResponse.json(stores)
     } catch (error) {
         console.error('Admin stores error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return createSecureErrorResponse('fetching stores', 500)
     }
 }
 
@@ -80,16 +108,35 @@ export async function POST(request) {
 
 export async function PATCH(request) {
     try {
+        // Check admin authentication
+        const isAdmin = await isAdminUser()
+        if (!isAdmin) {
+            return createSecureErrorResponse('admin access', 403)
+        }
+
         const { storeId, isActive } = await request.json()
+
+        // Validate input
+        if (!storeId || typeof isActive !== 'boolean') {
+            return createSecureErrorResponse('store update', 400)
+        }
 
         const store = await prisma.store.update({
             where: { id: storeId },
-            data: { isActive }
+            data: { isActive },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                }
+            }
         })
 
         return NextResponse.json(store)
     } catch (error) {
         console.error('Admin store update error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return createSecureErrorResponse('updating store', 500)
     }
 }

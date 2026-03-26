@@ -22,11 +22,22 @@ export default function CreateStore() {
         description: "",
         email: "",
         contact: "",
-        address: ""
+        address: "",
+        logo: null,
+        logoPreview: null
     })
 
     const onChangeHandler = (e) => {
         setStoreInfo({ ...storeInfo, [e.target.name]: e.target.value })
+    }
+
+    const handleLogoChange = async (e) => {
+        const file = e.target.files[0]
+        if (file) {
+            // Create preview URL
+            const previewUrl = URL.createObjectURL(file)
+            setStoreInfo({ ...storeInfo, logo: file, logoPreview: previewUrl })
+        }
     }
 
     const fetchSellerStatus = async () => {
@@ -76,6 +87,27 @@ export default function CreateStore() {
         }
 
         try {
+            let logoUrl = 'https://via.placeholder.com/200' // Default logo
+
+            // Upload logo if selected
+            if (storeInfo.logo) {
+                const formData = new FormData()
+                formData.append('file', storeInfo.logo)
+
+                const uploadResponse = await fetch('/api/upload/image', {
+                    method: 'POST',
+                    body: formData
+                })
+
+                if (uploadResponse.ok) {
+                    const uploadData = await uploadResponse.json()
+                    logoUrl = uploadData.url
+                } else {
+                    toast.error('Failed to upload logo')
+                    return
+                }
+            }
+
             const storeData = {
                 name: storeInfo.name,
                 username: storeInfo.username,
@@ -83,7 +115,7 @@ export default function CreateStore() {
                 email: storeInfo.email,
                 contact: storeInfo.contact,
                 address: storeInfo.address,
-                logo: 'https://via.placeholder.com/200' // Default logo
+                logo: logoUrl
             }
 
             const response = await fetch('/api/admin/stores', {
@@ -131,8 +163,14 @@ export default function CreateStore() {
 
                         <label className="mt-10 cursor-pointer">
                             Store Logo
-                            <Image src={assets.upload_area} className="rounded-lg mt-2 h-16 w-auto" alt="" width={150} height={100} />
-                            {/* <input type="file" accept="image/*" onChange={(e) => setStoreInfo({ ...storeInfo, image: e.target.files[0] })} hidden /> */}
+                            <div className="mt-2">
+                                {storeInfo.logoPreview ? (
+                                    <Image src={storeInfo.logoPreview} className="rounded-lg h-32 w-32 object-cover" alt="Logo preview" width={128} height={128} />
+                                ) : (
+                                    <Image src={assets.upload_area} className="rounded-lg h-16 w-auto" alt="" width={150} height={100} />
+                                )}
+                            </div>
+                            <input type="file" accept="image/*" onChange={handleLogoChange} className="hidden" />
                         </label>
 
                         <p>Username</p>

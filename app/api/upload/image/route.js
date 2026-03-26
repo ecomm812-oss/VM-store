@@ -2,40 +2,43 @@ import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
+import { currentUser } from '@clerk/nextjs/server'
+import { validateFileUpload, createSecureErrorResponse } from '@/lib/security'
 
 export async function POST(request) {
     try {
+        // Check authentication - any logged-in user can upload
+        const clerkUser = await currentUser()
+        if (!clerkUser) {
+            return createSecureErrorResponse('file upload', 401)
+        }
+
         const data = await request.formData()
         const file = data.get('file')
 
         if (!file) {
-            return NextResponse.json({ error: 'No file received' }, { status: 400 })
+            return NextResponse.json({ error: 'No file received.', code: 400 }, { status: 400 })
         }
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
-        }
-
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-            return NextResponse.json({ error: 'File size must be less than 5MB' }, { status: 400 })
+        // Use comprehensive file validation
+        const validation = validateFileUpload(file)
+        if (!validation.isValid) {
+            return NextResponse.json({ error: validation.error, code: 400 }, { status: 400 })
         }
 
         // Convert file to buffer
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
-        // Generate unique filename
-        const fileExtension = file.name.split('.').pop()
-        const fileName = `${randomUUID()}.${fileExtension}`
+        // Generate secure unique filename with proper extension
+        const fileName = `${randomUUID()}.jpg` // Force .jpg extension for security
 
         // Create uploads directory if it doesn't exist
         const uploadsDir = join(process.cwd(), 'public', 'uploads')
         try {
             await mkdir(uploadsDir, { recursive: true })
         } catch (error) {
-            // Directory might already exist
+            // Directory might already exist, continue
         }
 
         // Save file to public/uploads directory

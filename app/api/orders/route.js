@@ -2,12 +2,22 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs/server'
 import Razorpay from 'razorpay'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 export async function POST(request) {
     try {
         const clerkUser = await currentUser()
         if (!clerkUser) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            return NextResponse.json({ error: 'Authentication required.', code: 401 }, { status: 401 })
+        }
+
+        // Rate limiting: 10 orders per 15 minutes per user
+        const rateLimit = checkRateLimit(`user:${clerkUser.id}`, { maxRequests: 10 })
+        if (!rateLimit.allowed) {
+            return NextResponse.json({
+                error: 'Too many orders. Please try again later.',
+                code: 429
+            }, { status: 429 })
         }
 
         // Find the user in our database, or create if not exists
@@ -55,23 +65,41 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Invalid store' }, { status: 400 })
         }
 
-        // Validate that all products exist and are in stock
+        // Validate that all products exist and are in stock, and calculate correct total
+        let calculatedTotal = 0
         for (const item of orderItems) {
             const product = await prisma.product.findUnique({
                 where: { id: item.productId }
             })
 
             if (!product) {
-                return NextResponse.json({ error: `Product ${item.productId} not found` }, { status: 400 })
+                return NextResponse.json({ error: `Product ${item.productId} not found`, code: 400 }, { status: 400 })
             }
 
             if (!product.inStock) {
-                return NextResponse.json({ error: `Product ${product.name} is out of stock` }, { status: 400 })
+                return NextResponse.json({ error: `Product ${product.name} is out of stock`, code: 400 }, { status: 400 })
             }
 
             if (product.storeId !== storeId) {
-                return NextResponse.json({ error: `Product ${product.name} does not belong to this store` }, { status: 400 })
+                return NextResponse.json({ error: `Product ${product.name} does not belong to this store`, code: 400 }, { status: 400 })
             }
+
+            // Validate quantity
+            if (!item.quantity || item.quantity < 1 || item.quantity > 99) {
+                return NextResponse.json({ error: `Invalid quantity for product ${product.name}`, code: 400 }, { status: 400 })
+            }
+
+            // Add to calculated total using the actual product price from database
+            calculatedTotal += product.price * item.quantity
+        }
+
+        // Validate that submitted total matches calculated total (allow 1 cent tolerance for currency issues)
+        const tolerance = 0.01
+        if (Math.abs(calculatedTotal - total) > tolerance) {
+            return NextResponse.json({
+                error: 'Order total does not match item prices. Please refresh and try again.',
+                code: 400
+            }, { status: 400 })
         }
 
         // If Razorpay is selected, validate credentials before creating the order record.
