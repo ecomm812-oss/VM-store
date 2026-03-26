@@ -1,7 +1,6 @@
-export const metadata = {
-    title: "Subscribe to Seller Plan | VM Cart",
-    description: "Subscribe to a seller plan and start selling on VM Cart marketplace.",
-};
+import { pageMetadata } from "@/lib/metadata";
+
+export const metadata = pageMetadata.subscription;
 
 export default function SubscriptionLayout({ children }) {
     return (
