@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function POST(request: NextRequest) {
+export async function POST(request) {
     try {
         const { name, email, phone, company, message, plan } = await request.json();
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request) {
     // This could be used by admin to view contact inquiries
     // For now, just return a message
     return NextResponse.json({ message: 'Contact inquiries are handled by admin panel' });
