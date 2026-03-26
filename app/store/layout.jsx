@@ -1,9 +1,7 @@
 import StoreLayout from "@/components/store/StoreLayout";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = {
-    title: "Seller Dashboard - VM Cart Store Management",
-    description: "Access your seller dashboard on VM Cart. Manage products, orders, analytics, and grow your online store.",
-};
+export const metadata = pageMetadata.storeDashboard;
 
 export default function RootAdminLayout({ children }) {
 

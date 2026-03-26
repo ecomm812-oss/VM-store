@@ -1,9 +1,7 @@
 import AdminLayout from "@/components/admin/AdminLayout";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata = {
-    title: "Admin Dashboard - VM Cart Platform Management",
-    description: "VM Cart platform administration panel. Manage stores, approvals, coupons, and platform operations.",
-};
+export const metadata = pageMetadata.adminDashboard;
 
 export default function RootAdminLayout({ children }) {
 

@@ -35,8 +35,27 @@ export default function StoreShop() {
         fetchStoreData()
     }, [])
 
+    // Generate dynamic metadata
+    const generateMetadata = (storeInfo) => {
+        if (!storeInfo) return {};
+
+        return {
+            title: `${storeInfo.name} Store | Shop Products on VM Cart`,
+            description: `${storeInfo.description || `Visit ${storeInfo.name}'s store on VM Cart. Browse and shop quality products from this independent seller.`}`,
+        };
+    };
+
+    const metadata = generateMetadata(storeInfo);
+
     return !loading ? (
         <div className="min-h-[70vh] mx-6">
+            {/* Dynamic meta tags for SEO */}
+            {metadata.title && (
+                <>
+                    <title>{metadata.title}</title>
+                    <meta name="description" content={metadata.description} />
+                </>
+            )}
 
             {/* Store Info Banner */}
             {storeInfo && (
