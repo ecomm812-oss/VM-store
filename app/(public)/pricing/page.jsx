@@ -1,4 +1,6 @@
 
+import Link from 'next/link';
+
 export default function PricingPage() {
     return (
         <div className='mx-auto max-w-[700px] my-28'>
@@ -19,9 +21,9 @@ export default function PricingPage() {
                         <li>Email support</li>
                         <li>Standard commission: 5%</li>
                     </ul>
-                    <button onClick={() => alert('Starter plan selected! Contact admin to subscribe.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <Link href='/subscription?plan=starter' className='inline-block w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors text-center'>
                         Get Started
-                    </button>
+                    </Link>
                 </div>
 
                 <div className='bg-green-50 border-2 border-green-500 rounded-lg p-8 text-center hover:shadow-lg transition-shadow relative'>
@@ -37,9 +39,9 @@ export default function PricingPage() {
                         <li>Lower commission: 3%</li>
                         <li>Custom store theme</li>
                     </ul>
-                    <button onClick={() => alert('Professional plan selected! Contact admin to subscribe.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <Link href='/subscription?plan=professional' className='inline-block w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors text-center'>
                         Get Started
-                    </button>
+                    </Link>
                 </div>
 
                 <div className='bg-white border border-slate-200 rounded-lg p-8 text-center hover:shadow-lg transition-shadow'>
@@ -53,9 +55,9 @@ export default function PricingPage() {
                         <li>Custom integrations</li>
                         <li>API access</li>
                     </ul>
-                    <button onClick={() => alert('Enterprise plan selected! Contact sales team.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <Link href='/contact' className='inline-block w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors text-center'>
                         Contact Sales
-                    </button>
+                    </Link>
                 </div>
             </div>
 

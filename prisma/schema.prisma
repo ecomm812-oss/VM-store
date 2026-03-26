@@ -165,7 +165,58 @@ model Store {
     createdAt   DateTime @default(now())
     updatedAt   DateTime @updatedAt
 
-    Product Product[]
-    Order   Order[]
-    user    User      @relation(fields: [userId], references: [id])
+    Product      Product[]
+    Order        Order[]
+    Subscription Subscription[]
+    user         User         @relation(fields: [userId], references: [id])
+}
+
+// Subscription plans for sellers
+enum SubscriptionPlan {
+    STARTER
+    PROFESSIONAL
+    ENTERPRISE
+}
+
+enum SubscriptionStatus {
+    PENDING
+    ACTIVE
+    CANCELLED
+    EXPIRED
+}
+
+// Seller subscription model
+model Subscription {
+    id        String             @id @default(cuid())
+    storeId   String
+    plan      SubscriptionPlan
+    price     Float
+    status    SubscriptionStatus @default(PENDING)
+    startDate DateTime
+    endDate   DateTime
+    createdAt DateTime           @default(now())
+    updatedAt DateTime           @updatedAt
+
+    store Store @relation(fields: [storeId], references: [id])
+}
+
+// Contact inquiries from potential customers
+enum ContactStatus {
+    NEW
+    IN_PROGRESS
+    RESOLVED
+    CLOSED
+}
+
+model Contact {
+    id        String        @id @default(cuid())
+    name      String
+    email     String
+    phone     String?
+    company   String?
+    message   String
+    plan      String        @default("ENTERPRISE")
+    status    ContactStatus @default(NEW)
+    createdAt DateTime      @default(now())
+    updatedAt DateTime      @updatedAt
 }
