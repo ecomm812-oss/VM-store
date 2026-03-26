@@ -19,7 +19,7 @@ export default function PricingPage() {
                         <li>Email support</li>
                         <li>Standard commission: 5%</li>
                     </ul>
-                    <button className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <button onClick={() => alert('Starter plan selected! Contact admin to subscribe.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
                         Get Started
                     </button>
                 </div>
@@ -37,7 +37,7 @@ export default function PricingPage() {
                         <li>Lower commission: 3%</li>
                         <li>Custom store theme</li>
                     </ul>
-                    <button className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <button onClick={() => alert('Professional plan selected! Contact admin to subscribe.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
                         Get Started
                     </button>
                 </div>
@@ -53,7 +53,7 @@ export default function PricingPage() {
                         <li>Custom integrations</li>
                         <li>API access</li>
                     </ul>
-                    <button className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
+                    <button onClick={() => alert('Enterprise plan selected! Contact sales team.')} className='w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors'>
                         Contact Sales
                     </button>
                 </div>
