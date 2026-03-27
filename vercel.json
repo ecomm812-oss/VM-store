@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm ci --legacy-peer-deps",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "functions": {
+    "app/api/**/route.js": {
+      "maxDuration": 30
+    },
+    "app/api/**/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
