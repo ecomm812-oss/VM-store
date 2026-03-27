@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from 'lucide-react';
@@ -40,7 +40,7 @@ const plans = {
     }
 };
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
     const searchParams = useSearchParams();
     const planType = searchParams.get('plan');
     const [loading, setLoading] = useState(false);
@@ -171,5 +171,13 @@ export default function SubscriptionPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SubscriptionPage() {
+    return (
+        <Suspense fallback={<div className='min-h-screen bg-slate-50 flex items-center justify-center'>Loading...</div>}>
+            <SubscriptionContent />
+        </Suspense>
     );
 }
