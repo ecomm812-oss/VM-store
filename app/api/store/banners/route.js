@@ -56,10 +56,13 @@ export async function POST(req) {
         console.log('Request body:', body)
         const { title, description, imageUrl, order } = body;
 
-        if (!imageUrl) {
-            console.log('Missing required field - imageUrl:', !!imageUrl)
-            return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
+        if (!imageUrl || String(imageUrl).trim() === '') {
+            console.log('Missing required field - imageUrl:', imageUrl)
+            return NextResponse.json({ error: 'Image URL is required and cannot be empty' }, { status: 400 });
         }
+
+        const normalizedTitle = title ? String(title).trim() : '';
+        const dbTitle = normalizedTitle || 'Untitled Banner';
 
         // Find user by clerkId to get database userId
         console.log('Looking up user with clerkId:', clerkId)
@@ -90,10 +93,8 @@ export async function POST(req) {
             }, { status: 404 });
         }
 
-        const normalizedTitle = title ? String(title).trim() : '';
-
         console.log('Creating banner with data:', {
-            title: normalizedTitle || '(empty)',
+            title: dbTitle,
             description: description || '',
             imageUrl,
             order: order || 0,
@@ -102,10 +103,10 @@ export async function POST(req) {
 
         const banner = await prisma.banner.create({
             data: {
-                title: normalizedTitle,
+                title: dbTitle,
                 description: description || '',
                 imageUrl,
-                order: order || 0,
+                order: Number.isInteger(order) ? order : Number(order) || 0,
                 storeId: store.id
             }
         });
@@ -119,8 +120,18 @@ export async function POST(req) {
             meta: error.meta,
             stack: error.stack
         });
-        return NextResponse.json({ 
-            error: 'Failed to create banner',
+
+        const message =
+            error?.code === 'P2002'
+                ? 'Banner with same unique data already exists.'
+                : error?.code === 'P2003'
+                ? 'Related entity not found.'
+                : error?.code === 'P2009'
+                ? 'Invalid data format.'
+                : 'Failed to create banner';
+
+        return NextResponse.json({
+            error: message,
             details: process.env.NODE_ENV === 'development' ? error.message : undefined
         }, { status: 500 });
     }
