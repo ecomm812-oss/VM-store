@@ -124,14 +124,18 @@ export default function BannerManagement() {
     const handleUploadBanner = async (e) => {
         e.preventDefault();
 
+        console.log('=== BANNER UPLOAD START ===')
+        console.log('Form data:', formData)
+
         if (!formData.title || !formData.imageUrl) {
+            console.log('Validation failed - missing title or imageUrl')
             toast.error('Please fill in all required fields');
             return;
         }
 
         setUploading(true);
         try {
-            console.log('Uploading banner with formData:', formData);
+            console.log('Sending POST request to /api/store/banners');
             
             const response = await fetch('/api/store/banners', {
                 method: 'POST',
@@ -139,11 +143,11 @@ export default function BannerManagement() {
                 body: JSON.stringify(formData)
             });
 
-            console.log('Banner upload response - Status:', response.status, 'OK:', response.ok);
+            console.log('Response received - Status:', response.status, 'OK:', response.ok);
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('Banner created successfully:', data);
+                console.log('Success response data:', data);
                 toast.success('Banner uploaded successfully!');
                 setFormData({ title: '', description: '', imageUrl: '', order: 0 });
                 setSelectedFile(null);
@@ -153,10 +157,12 @@ export default function BannerManagement() {
                 }
                 fetchBanners();
             } else {
+                console.log('Error response - parsing JSON...')
                 const error = await response.json();
-                console.log('Banner upload error response:', error);
+                console.log('Error response data:', error);
                 
                 const errorMessage = error.details || error.error || 'Failed to create banner';
+                console.log('Final error message:', errorMessage)
                 
                 if (error.error && error.error.includes('create a store')) {
                     toast.error('You need to create a store first!');
@@ -165,7 +171,7 @@ export default function BannerManagement() {
                 }
             }
         } catch (error) {
-            console.error('Error uploading banner:', error);
+            console.error('Network or parsing error:', error);
             toast.error('An error occurred while uploading. Check console for details.');
         } finally {
             setUploading(false);

@@ -44,39 +44,59 @@ export async function GET(req) {
 // POST - Create/Upload banner
 export async function POST(req) {
     try {
+        console.log('=== BANNER CREATION START ===')
         const { userId: clerkId } = await auth();
+        console.log('Auth result - clerkId:', clerkId)
         if (!clerkId) {
+            console.log('No clerkId found, returning 401')
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { title, description, imageUrl, order } = await req.json();
+        const body = await req.json();
+        console.log('Request body:', body)
+        const { title, description, imageUrl, order } = body;
 
         if (!title || !imageUrl) {
+            console.log('Missing required fields - title:', !!title, 'imageUrl:', !!imageUrl)
             return NextResponse.json({ error: 'Title and image URL are required' }, { status: 400 });
         }
 
         // Find user by clerkId to get database userId
+        console.log('Looking up user with clerkId:', clerkId)
         const user = await prisma.user.findUnique({
             where: { clerkId },
             select: { id: true }
         });
+        console.log('User lookup result:', user)
 
         if (!user) {
+            console.log('User not found for clerkId:', clerkId)
             return NextResponse.json({ 
                 error: 'User not found. Please log in again.' 
             }, { status: 404 });
         }
 
+        console.log('Looking up store for userId:', user.id)
         const store = await prisma.store.findUnique({
             where: { userId: user.id },
             select: { id: true }
         });
+        console.log('Store lookup result:', store)
 
         if (!store) {
+            console.log('Store not found for userId:', user.id)
             return NextResponse.json({ 
                 error: 'You must create a store first before uploading banners. Please go to Store Dashboard and create a store.' 
             }, { status: 404 });
         }
+
+        console.log('Creating banner with data:', {
+            title,
+            description: description || '',
+            imageUrl,
+            order: order || 0,
+            storeId: store.id
+        })
 
         const banner = await prisma.banner.create({
             data: {
