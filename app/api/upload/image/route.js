@@ -4,6 +4,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { currentUser } from '@clerk/nextjs/server'
 import { validateFileUpload, createSecureErrorResponse } from '@/lib/security'
+import { put } from '@vercel/blob'
 
 export async function POST(request) {
     try {
@@ -26,27 +27,38 @@ export async function POST(request) {
             return NextResponse.json({ error: validation.error, code: 400 }, { status: 400 })
         }
 
-        // Convert file to buffer
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
+        console.log('Buffer created, size:', buffer.length)
 
         // Generate secure unique filename with proper extension
-        const fileName = `${randomUUID()}.jpg` // Force .jpg extension for security
+        const originalExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+        const allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+        const ext = allowedExts.includes(originalExt) ? originalExt : 'jpg'
+        const fileName = `${randomUUID()}.${ext}`
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = join(process.cwd(), 'public', 'uploads')
-        try {
-            await mkdir(uploadsDir, { recursive: true })
-        } catch (error) {
-            // Directory might already exist, continue
+        if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+            // Use Vercel Blob in production
+            const blob = await put(fileName, buffer, {
+                access: 'public',
+                contentType: file.type
+            })
+
+            imageUrl = blob.url
+        } else {
+            // Use local file storage in development
+            // Create uploads directory if it doesn't exist
+            const uploadsDir = join(process.cwd(), 'public', 'uploads')
+            try {
+                await mkdir(uploadsDir, { recursive: true })
+            } catch (error) {
+                // Directory might already exist, continue
+            }
+
+            // Save file to public/uploads directory
+            const filePath = join(uploadsDir, fileName)
+            await writeFile(filePath, buffer)
+
+            imageUrl = `/uploads/${fileName}`
         }
-
-        // Save file to public/uploads directory
-        const filePath = join(uploadsDir, fileName)
-        await writeFile(filePath, buffer)
-
-        // Return the public URL
-        const imageUrl = `/uploads/${fileName}`
 
         return NextResponse.json({
             success: true,
