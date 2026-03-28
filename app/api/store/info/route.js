@@ -6,8 +6,11 @@ export async function GET(request) {
     try {
         const clerkUser = await currentUser()
         if (!clerkUser) {
+            console.log('No Clerk user found')
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
+        console.log('Looking up user with clerkId:', clerkUser.id)
 
         // Find the user in our database, or create if not exists
         let user = await prisma.user.findUnique({
@@ -15,6 +18,7 @@ export async function GET(request) {
         })
 
         if (!user) {
+            console.log('User not found, creating new user')
             // Create user if they don't exist
             user = await prisma.user.create({
                 data: {
@@ -26,14 +30,18 @@ export async function GET(request) {
             })
         }
 
+        console.log('User found/created:', { id: user.id, clerkId: user.clerkId })
+
         const store = await prisma.store.findUnique({
             where: { userId: user.id }
         })
 
         if (!store) {
+            console.log('No store found for userId:', user.id)
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
+        console.log('Store found:', { id: store.id, name: store.name })
         return NextResponse.json(store)
     } catch (error) {
         console.error('Store info error:', error)

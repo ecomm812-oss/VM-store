@@ -55,12 +55,15 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        console.log('Creating store for clerkId:', clerkUser.id)
+
         // Find the user in our database, or create if not exists
         let user = await prisma.user.findUnique({
             where: { clerkId: clerkUser.id }
         })
 
         if (!user) {
+            console.log('User not found, creating new user')
             // Create user if they don't exist
             user = await prisma.user.create({
                 data: {
@@ -70,6 +73,9 @@ export async function POST(request) {
                     image: clerkUser.imageUrl
                 }
             })
+            console.log('User created:', { id: user.id, clerkId: user.clerkId })
+        } else {
+            console.log('User found:', { id: user.id, clerkId: user.clerkId })
         }
 
         const { name, username, description, email, contact, address, logo } = await request.json()
@@ -80,6 +86,7 @@ export async function POST(request) {
         })
 
         if (existingStores.length > 0) {
+            console.log('User already has a store:', existingStores[0].id)
             return NextResponse.json({ error: 'You already have a store' }, { status: 400 })
         }
 
@@ -99,6 +106,7 @@ export async function POST(request) {
             }
         })
 
+        console.log('Store created successfully:', { id: store.id, name: store.name, userId: store.userId })
         return NextResponse.json(store, { status: 201 })
     } catch (error) {
         console.error('Store creation error:', error)

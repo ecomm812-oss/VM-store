@@ -86,6 +86,12 @@ export default function CreateStore() {
             return
         }
 
+        // Validate required fields
+        if (!storeInfo.name || !storeInfo.username || !storeInfo.email || !storeInfo.contact) {
+            toast.error('Please fill in all required fields')
+            return
+        }
+
         try {
             let logoUrl = 'https://via.placeholder.com/200' // Default logo
 
@@ -94,16 +100,25 @@ export default function CreateStore() {
                 const formData = new FormData()
                 formData.append('file', storeInfo.logo)
 
-                const uploadResponse = await fetch('/api/upload/image', {
-                    method: 'POST',
-                    body: formData
-                })
+                try {
+                    const uploadResponse = await fetch('/api/upload/image', {
+                        method: 'POST',
+                        body: formData
+                    })
 
-                if (uploadResponse.ok) {
-                    const uploadData = await uploadResponse.json()
-                    logoUrl = uploadData.url
-                } else {
-                    toast.error('Failed to upload logo')
+                    if (uploadResponse.ok) {
+                        const uploadData = await uploadResponse.json()
+                        logoUrl = uploadData.url
+                    } else {
+                        const errorData = await uploadResponse.json().catch(() => ({}))
+                        const errorMessage = errorData.error || `Upload failed with status ${uploadResponse.status}`
+                        console.error('Logo upload error:', errorMessage, errorData)
+                        toast.error(errorMessage)
+                        return
+                    }
+                } catch (uploadError) {
+                    console.error('Logo upload error:', uploadError)
+                    toast.error('Failed to upload logo. Please check your file and try again.')
                     return
                 }
             }
