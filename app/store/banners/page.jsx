@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { TrashIcon, EditIcon, UploadIcon, XIcon, AlertIcon } from 'lucide-react';
+import { TrashIcon, EditIcon, UploadIcon, XIcon } from 'lucide-react';
 
 export default function BannerManagement() {
     const [banners, setBanners] = useState([]);
