@@ -82,13 +82,23 @@ export default function SlidingBanner() {
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-900/40 to-slate-900/20 z-10"></div>
 
                     {/* Image */}
-                    <Image
-                        src={banner.imageUrl}
-                        alt={banner.title}
-                        fill
-                        className="object-cover"
-                        priority={index === 0}
-                    />
+                    <div className="absolute inset-0">
+                        {banner.imageUrl ? (
+                            <img
+                                src={banner.imageUrl}
+                                alt={banner.title || 'Banner image'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    console.error('Banner image load error:', banner.imageUrl)
+                                    e.currentTarget.src = 'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%221200%22%20height=%22500%22%3E%3Crect%20width=%221200%22%20height=%22500%22%20fill=%22%236b7280%22/%3E%3Ctext%20x=%2250%22%20y=%22270%22%20font-size=%2230%22%20fill=%22white%22%3EImage%20unavailable%20or%20failed%20to%20load%3C/text%3E%3C/svg%3E'
+                                }}
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-slate-400 flex items-center justify-center">
+                                <span className="text-white text-lg">Image not available</span>
+                            </div>
+                        )}
+                    </div>
 
                     {/* Text Content */}
                     <div className="absolute inset-0 flex flex-col justify-center items-center z-20 text-white text-center px-6">
