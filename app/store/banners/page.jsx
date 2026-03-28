@@ -1,6 +1,5 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { TrashIcon, EditIcon, UploadIcon, XIcon } from 'lucide-react';
@@ -18,7 +17,6 @@ export default function BannerManagement() {
         imageUrl: '',
         order: 0
     });
-    const [uploadMode, setUploadMode] = useState('url'); // 'url' or 'file'
     const [selectedFile, setSelectedFile] = useState(null);
     const fileInputRef = React.useRef(null);
 
@@ -127,9 +125,9 @@ export default function BannerManagement() {
         console.log('=== BANNER UPLOAD START ===')
         console.log('Form data:', formData)
 
-        if (!formData.title || !formData.imageUrl) {
-            console.log('Validation failed - missing title or imageUrl')
-            toast.error('Please fill in all required fields');
+        if (!formData.imageUrl) {
+            console.log('Validation failed - missing imageUrl')
+            toast.error('Please upload an image to create the banner');
             return;
         }
 
@@ -151,7 +149,6 @@ export default function BannerManagement() {
                 toast.success('Banner uploaded successfully!');
                 setFormData({ title: '', description: '', imageUrl: '', order: 0 });
                 setSelectedFile(null);
-                setUploadMode('url');
                 if (fileInputRef.current) {
                     fileInputRef.current.value = '';
                 }
@@ -225,7 +222,7 @@ export default function BannerManagement() {
             <div className="p-6 max-w-4xl mx-auto">
                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
                     <div className="flex items-start gap-3">
-                        <AlertIcon className="text-yellow-600 mt-1" size={24} />
+                        <XIcon className="text-yellow-600 mt-1" size={24} />
                         <div className="flex-1">
                             <h2 className="text-lg font-bold text-yellow-800 mb-2">Store Required</h2>
                             <p className="text-yellow-700 mb-4">{storeError || 'You need to create a store before uploading banners.'}</p>
@@ -257,34 +254,10 @@ export default function BannerManagement() {
             <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
                 <h2 className="text-2xl font-semibold mb-6 text-slate-800">Upload New Banner</h2>
 
-                {/* Upload Mode Selector */}
-                <div className="flex gap-4 mb-6">
-                    <button
-                        onClick={() => setUploadMode('file')}
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                            uploadMode === 'file'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                    >
-                        📁 Upload File
-                    </button>
-                    <button
-                        onClick={() => setUploadMode('url')}
-                        className={`px-6 py-2 rounded-lg font-medium transition-colors ${
-                            uploadMode === 'url'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                        }`}
-                    >
-                        🔗 Use URL
-                    </button>
-                </div>
-
                 <form onSubmit={handleUploadBanner} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Banner Title *
+                            Banner Title (optional)
                         </label>
                         <input
                             type="text"
@@ -324,78 +297,61 @@ export default function BannerManagement() {
                         ></textarea>
                     </div>
 
-                    {/* File Upload or URL Input */}
                     <div className="md:col-span-2">
-                        {uploadMode === 'file' ? (
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Select Banner Image *
-                                </label>
-                                <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileSelect}
-                                        disabled={fileUploading}
-                                        className="hidden"
-                                        id="file-input"
-                                    />
-                                    <label htmlFor="file-input" className="cursor-pointer block">
-                                        <UploadIcon size={40} className="mx-auto mb-2 text-slate-400" />
-                                        <p className="text-slate-700 font-medium mb-1">
-                                            {selectedFile ? selectedFile.name : 'Click to select or drag and drop'}
-                                        </p>
-                                        <p className="text-sm text-slate-500">
-                                            PNG, JPG, GIF (max 5MB)
-                                        </p>
-                                    </label>
-                                    {fileUploading && (
-                                        <p className="text-sm text-blue-600 mt-2">Uploading...</p>
-                                    )}
-                                    {selectedFile && !fileUploading && (
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedFile(null);
-                                                if (fileInputRef.current) fileInputRef.current.value = '';
-                                            }}
-                                            className="mt-2 text-sm text-red-600 hover:text-red-700"
-                                        >
-                                            Remove
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ) : (
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Image URL *
-                                </label>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                Select Banner Image *
+                            </label>
+                            <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
                                 <input
-                                    type="url"
-                                    name="imageUrl"
-                                    value={formData.imageUrl}
-                                    onChange={handleInputChange}
-                                    placeholder="https://example.com/banner.jpg"
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileSelect}
+                                    disabled={fileUploading}
+                                    className="hidden"
+                                    id="file-input"
                                 />
-                                <p className="text-sm text-slate-500 mt-2">
-                                    Recommended size: 1400x500px
-                                </p>
+                                <label htmlFor="file-input" className="cursor-pointer block">
+                                    <UploadIcon size={40} className="mx-auto mb-2 text-slate-400" />
+                                    <p className="text-slate-700 font-medium mb-1">
+                                        {selectedFile ? selectedFile.name : 'Click to select or drag and drop'}
+                                    </p>
+                                    <p className="text-sm text-slate-500">
+                                        PNG, JPG, GIF (max 5MB)
+                                    </p>
+                                </label>
+                                {fileUploading && (
+                                    <p className="text-sm text-blue-600 mt-2">Uploading...</p>
+                                )}
+                                {selectedFile && !fileUploading && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedFile(null);
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                        }}
+                                        className="mt-2 text-sm text-red-600 hover:text-red-700"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {formData.imageUrl && (
                         <div className="md:col-span-2 border-2 border-dashed border-slate-300 rounded-lg p-4">
                             <p className="text-sm text-slate-600 mb-2">Preview:</p>
-                            <div className="relative w-full h-48">
-                                <Image
+                            <div className="w-full h-48">
+                                <img
                                     src={formData.imageUrl}
                                     alt="Preview"
-                                    fill
-                                    className="object-cover rounded"
+                                    className="w-full h-full object-cover rounded"
+                                    onError={(e) => {
+                                        console.error('Preview image load error:', e.currentTarget.src);
+                                        e.currentTarget.src = 'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%221200%22%20height=%22500%22%3E%3Crect%20width=%221200%22%20height=%22500%22%20fill=%22%236b7280%22/%3E%3Ctext%20x=%2250%22%20y=%22270%22%20font-size=%2230%22%20fill=%22white%22%3EImage%20unavailable%3C/text%3E%3C/svg%3E';
+                                    }}
                                 />
                             </div>
                         </div>
@@ -425,19 +381,22 @@ export default function BannerManagement() {
                         {banners.map(banner => (
                             <div key={banner.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
                                 <div className="flex flex-col md:flex-row gap-4">
-                                    <div className="relative w-full md:w-40 h-24 flex-shrink-0">
-                                        <Image
+                                    <div className="w-full md:w-40 h-24 flex-shrink-0">
+                                        <img
                                             src={banner.imageUrl}
-                                            alt={banner.title}
-                                            fill
-                                            className="object-cover rounded"
-                                        />
-                                    </div>
+                                            alt={banner.title || 'Banner image'}
+                                            className="w-full h-full object-cover rounded"
+                                            onError={(e) => {
+                                                console.error('Banner list image load error:', banner.imageUrl);
+                                                e.currentTarget.src = 'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22400%22%20height=%22400%22%3E%3Crect%20width=%22400%22%20height=%22400%22%20fill=%22%23e2e8f0%22/%3E%3Ctext%20x=%2210%22%20y=%22205%22%20font-size=%2220%22%20fill=%22%236b7280%22%3EImage%20unavailable%3C/text%3E%3C/svg%3E';
+                                            }}
+                                            />
+                                        </div>
 
                                     <div className="flex-1">
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <h3 className="text-lg font-semibold text-slate-800">{banner.title}</h3>
+                                                <h3 className="text-lg font-semibold text-slate-800">{banner.title || 'Untitled Banner'}</h3>
                                                 {banner.description && (
                                                     <p className="text-slate-600 text-sm mt-1">{banner.description}</p>
                                                 )}

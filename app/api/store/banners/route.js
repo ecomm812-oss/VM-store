@@ -56,9 +56,9 @@ export async function POST(req) {
         console.log('Request body:', body)
         const { title, description, imageUrl, order } = body;
 
-        if (!title || !imageUrl) {
-            console.log('Missing required fields - title:', !!title, 'imageUrl:', !!imageUrl)
-            return NextResponse.json({ error: 'Title and image URL are required' }, { status: 400 });
+        if (!imageUrl) {
+            console.log('Missing required field - imageUrl:', !!imageUrl)
+            return NextResponse.json({ error: 'Image URL is required' }, { status: 400 });
         }
 
         // Find user by clerkId to get database userId
@@ -90,8 +90,10 @@ export async function POST(req) {
             }, { status: 404 });
         }
 
+        const normalizedTitle = title ? String(title).trim() : '';
+
         console.log('Creating banner with data:', {
-            title,
+            title: normalizedTitle || '(empty)',
             description: description || '',
             imageUrl,
             order: order || 0,
@@ -100,7 +102,7 @@ export async function POST(req) {
 
         const banner = await prisma.banner.create({
             data: {
-                title,
+                title: normalizedTitle,
                 description: description || '',
                 imageUrl,
                 order: order || 0,
