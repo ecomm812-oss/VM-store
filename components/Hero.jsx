@@ -3,6 +3,7 @@ import { assets } from '@/assets/assets'
 import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 import React from 'react'
+import Link from 'next/link'
 import CategoriesMarquee from './CategoriesMarquee'
 
 const Hero = () => {
@@ -24,7 +25,9 @@ const Hero = () => {
                             <p>Starts from</p>
                             <p className='text-3xl'>{currency}500</p>
                         </div>
-                        <button className='bg-slate-800 text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 mt-4 sm:mt-10 rounded-md hover:bg-slate-900 hover:scale-103 active:scale-95 transition btn-primary animate-slideInUp' style={{ animationDelay: '0.3s' }}>LEARN MORE</button>
+                        <Link href="/shop">
+                            <button className='bg-slate-800 text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 mt-4 sm:mt-10 rounded-md hover:bg-slate-900 hover:scale-103 active:scale-95 transition btn-primary animate-slideInUp' style={{ animationDelay: '0.3s' }}>SHOP</button>
+                        </Link>
                     </div>
                     <Image className='sm:absolute bottom-0 right-0 md:right-0 w-full sm:max-w-sm animate-fadeInRight' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="" />
                 </div>
@@ -32,14 +35,18 @@ const Hero = () => {
                     <div className='flex-1 flex items-center justify-between w-full bg-orange-200 rounded-3xl p-6 px-8 group hover-lift card-animate animate-fadeInRight' style={{ animationDelay: '0.1s' }}>
                         <div>
                             <p className='text-3xl font-medium bg-gradient-to-r from-slate-800 to-[#FFAD51] bg-clip-text text-transparent max-w-40'>Best products</p>
-                            <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
+                            <Link href="/shop">
+                                <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2 cursor-pointer'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
+                            </Link>
                         </div>
                         <Image className='w-35 transition-transform duration-300 group-hover:scale-110' src={assets.hero_product_img1} alt="" />
                     </div>
                     <div className='flex-1 flex items-center justify-between w-full bg-blue-200 rounded-3xl p-6 px-8 group hover-lift card-animate animate-fadeInRight' style={{ animationDelay: '0.2s' }}>
                         <div>
                             <p className='text-3xl font-medium bg-gradient-to-r from-slate-800 to-[#78B2FF] bg-clip-text text-transparent max-w-40'>20% discounts</p>
-                            <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
+                            <Link href="/shop">
+                                <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2 cursor-pointer'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
+                            </Link>
                         </div>
                         <Image className='w-35 transition-transform duration-300 group-hover:scale-110' src={assets.hero_product_img2} alt="" />
                     </div>

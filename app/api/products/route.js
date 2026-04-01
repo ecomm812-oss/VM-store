@@ -26,7 +26,19 @@ export async function GET(request) {
             },
             include: {
                 store: true,
-                rating: true
+                rating: {
+                    include: {
+                        user: {
+                            select: {
+                                name: true,
+                                image: true
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    }
+                }
             }
         })
 

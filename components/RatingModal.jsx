@@ -11,14 +11,39 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
     const [review, setReview] = useState('');
 
     const handleSubmit = async () => {
-        if (rating < 0 || rating > 5) {
+        if (rating < 1 || rating > 5) {
             return toast('Please select a rating');
         }
         if (review.length < 5) {
             return toast('write a short review');
         }
 
-        setRatingModal(null);
+        try {
+            const response = await fetch('/api/rating', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    rating,
+                    review,
+                    productId: ratingModal.productId,
+                    orderId: ratingModal.orderId
+                })
+            });
+
+            if (response.ok) {
+                toast.success('Rating submitted successfully!');
+                setRatingModal(null);
+                // Optionally refresh the page to show the new rating
+                window.location.reload();
+            } else {
+                const error = await response.json();
+                toast.error(error.error || 'Failed to submit rating');
+            }
+        } catch (error) {
+            toast.error('Failed to submit rating');
+        }
     }
 
     return (
