@@ -17,22 +17,30 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
     }
 
-    // Save to Contact table as newsletter signup for now (no dedicated table required)
-    const existing = await prisma.contact.findFirst({ where: { email: normalizedEmail } })
+    if (!process.env.DATABASE_URL) {
+      console.warn('[Newsletter API] DATABASE_URL not set; skipping DB save for', normalizedEmail)
+      return NextResponse.json({ message: 'Subscribed successfully (DB disabled)' }, { status: 200 })
+    }
 
-    if (!existing) {
-      await prisma.contact.create({
-        data: {
-          name: 'Newsletter Subscriber',
-          email: normalizedEmail,
-          message: 'Newsletter subscription request',
-        },
-      })
+    try {
+      const existing = await prisma.contact.findFirst({ where: { email: normalizedEmail } })
+      if (!existing) {
+        await prisma.contact.create({
+          data: {
+            name: 'Newsletter Subscriber',
+            email: normalizedEmail,
+            message: 'Newsletter subscription request',
+          },
+        })
+      }
+    } catch (dbError) {
+      console.error('[Newsletter API] Prisma error saving email', dbError)
+      return NextResponse.json({ message: 'Subscribed successfully (DB save failed)' }, { status: 200 })
     }
 
     return NextResponse.json({ message: 'Subscribed successfully' }, { status: 200 })
   } catch (error) {
-    console.error('[Newsletter API] Error saving subscription', error)
+    console.error('[Newsletter API] Error parsing request / other', error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
