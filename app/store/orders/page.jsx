@@ -62,30 +62,45 @@ export default function StoreOrders() {
     }
 
     const updateTrackingInfo = async () => {
-        if (!selectedOrder) return;
+        if (!selectedOrder) {
+            toast.error('No order selected')
+            return;
+        }
 
-        const response = await fetch('/api/orders/store/tracking', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                orderId: selectedOrder.id,
-                trackingNumber,
-                trackingUrl,
-                currentLocation,
-                estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null
+        try {
+            // Validate at least one field is provided
+            if (!trackingNumber?.trim() && !trackingUrl?.trim() && !currentLocation?.trim() && !estimatedDelivery) {
+                toast.error('Please provide at least one tracking detail')
+                return;
+            }
+
+            const response = await fetch('/api/orders/store/tracking', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: selectedOrder.id,
+                    trackingNumber: trackingNumber?.trim() || '',
+                    trackingUrl: trackingUrl?.trim() || '',
+                    currentLocation: currentLocation?.trim() || '',
+                    estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery).toISOString() : null
+                })
             })
-        })
 
-        if (response.ok) {
-            const updatedOrder = await response.json()
-            setOrders(orders.map(o => o.id === selectedOrder.id ? updatedOrder : o))
-            setSelectedOrder(updatedOrder)
-            toast.success('Tracking information updated!')
-        } else {
-            const error = await response.json()
-            toast.error(error.error || 'Failed to update tracking information')
+            if (response.ok) {
+                const updatedOrder = await response.json()
+                setOrders(orders.map(o => o.id === selectedOrder.id ? updatedOrder : o))
+                setSelectedOrder(updatedOrder)
+                toast.success('Tracking information updated!')
+            } else {
+                const errorData = await response.json()
+                console.error('Tracking update error:', errorData)
+                toast.error(errorData.error || 'Failed to update tracking information')
+            }
+        } catch (error) {
+            console.error('Tracking update exception:', error)
+            toast.error('An error occurred while updating tracking information')
         }
     }
 
