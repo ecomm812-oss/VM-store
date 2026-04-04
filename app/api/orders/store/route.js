@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs/server'
+import { sendOrderStatusNotification } from '@/lib/email'
 
 export async function GET(request) {
     try {
@@ -122,6 +123,9 @@ export async function PUT(request) {
                 user: true
             }
         })
+
+        // Send customer notification email about status change
+        await sendOrderStatusNotification(updatedOrder)
 
         return NextResponse.json(updatedOrder)
     } catch (error) {

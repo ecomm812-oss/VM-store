@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { currentUser } from '@clerk/nextjs/server'
 import { OrderStatus } from '@prisma/client'
+import { sendOrderStatusNotification } from '@/lib/email'
 
 export async function PUT(request) {
     try {
@@ -87,12 +88,16 @@ export async function PUT(request) {
                         }
                     },
                     store: true,
-                    address: true
+                    address: true,
+                    user: true
                 }
             })
 
             console.log('Order updated successfully');
             console.log('Updated order status:', updatedOrder.status);
+
+            // Send cancellation notification email to customer
+            await sendOrderStatusNotification(updatedOrder)
 
             return NextResponse.json({
                 message: 'Order cancelled successfully',
