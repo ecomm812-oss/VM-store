@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { auth } from '@clerk/nextjs/server'
 import { validateFileUpload, createSecureErrorResponse } from '@/lib/security'
 import { put } from '@vercel/blob'
+import { analyzeImage, shouldApproveImage } from '@/lib/ai-image-analysis'
 
 export async function POST(request) {
     try {
@@ -93,14 +94,40 @@ export async function POST(request) {
             console.log('Local file saved:', imageUrl)
         }
 
+        // Perform AI image analysis
+        console.log('Starting AI image analysis...')
+        const imageAnalysis = await analyzeImage(buffer, file.type || 'image/jpeg')
+        
+        console.log('Image analysis results:', {
+            description: imageAnalysis.description?.substring(0, 50),
+            tags: imageAnalysis.tags?.length || 0,
+            safe: imageAnalysis.isSafe,
+            action: imageAnalysis.recommendedAction
+        })
+
         return NextResponse.json({
             success: true,
             url: imageUrl,
-            message: 'Image uploaded successfully'
+            message: 'Image uploaded successfully',
+            ai: {
+                description: imageAnalysis.description,
+                objects: imageAnalysis.objects,
+                colors: imageAnalysis.colors,
+                quality: imageAnalysis.quality,
+                categories: imageAnalysis.categories,
+                tags: imageAnalysis.tags,
+                suggestions: imageAnalysis.suggestions,
+                contentSafe: imageAnalysis.isSafe,
+                concerns: imageAnalysis.concerns,
+                recommendedAction: imageAnalysis.recommendedAction,
+                confidence: imageAnalysis.confidence
+            }
+        }, { 
+            status: imageAnalysis.isSafe ? 200 : 202 // 202 if needs review
         })
 
     } catch (error) {
         console.error('Upload error:', error)
-        return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 })
+        return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 }) 
     }
 }
