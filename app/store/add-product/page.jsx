@@ -19,6 +19,7 @@ export default function StoreAddProduct() {
         price: 0,
         category: "",
     })
+    const [aiGeneratedDescription, setAiGeneratedDescription] = useState("")
     const [loading, setLoading] = useState(false)
 
 
@@ -73,6 +74,14 @@ export default function StoreAddProduct() {
                 const newUploadedFiles = [...uploadedFiles]
                 newUploadedFiles[index] = data.url
                 setUploadedFiles(newUploadedFiles)
+
+                if (data.ai?.description) {
+                    setAiGeneratedDescription(data.ai.description)
+                    setProductInfo(prev => ({
+                        ...prev,
+                        description: prev.description.trim() ? prev.description : data.ai.description
+                    }))
+                }
 
                 toast.success('Image uploaded successfully!')
             } else {
@@ -277,6 +286,11 @@ export default function StoreAddProduct() {
             <label htmlFor="" className="flex flex-col gap-2 my-6 ">
                 Description
                 <textarea name="description" onChange={onChangeHandler} value={productInfo.description} placeholder="Enter product description" rows={5} className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
+                {aiGeneratedDescription && (
+                    <p className="text-sm text-slate-500 mt-2">
+                        AI-generated suggestion: <span className="font-medium text-slate-700">{aiGeneratedDescription}</span>
+                    </p>
+                )}
             </label>
 
             <div className="flex gap-5">
