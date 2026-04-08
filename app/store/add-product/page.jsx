@@ -77,10 +77,13 @@ export default function StoreAddProduct() {
 
                 if (data.ai?.description) {
                     setAiGeneratedDescription(data.ai.description)
-                    setProductInfo(prev => ({
-                        ...prev,
-                        description: prev.description.trim() ? prev.description : data.ai.description
-                    }))
+                    // Auto-fill description with AI-generated text on first upload
+                    if (!productInfo.description.trim()) {
+                        setProductInfo(prev => ({
+                            ...prev,
+                            description: data.ai.description
+                        }))
+                    }
                 }
 
                 toast.success('Image uploaded successfully!')
@@ -287,9 +290,21 @@ export default function StoreAddProduct() {
                 Description
                 <textarea name="description" onChange={onChangeHandler} value={productInfo.description} placeholder="Enter product description" rows={5} className="w-full max-w-sm p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
                 {aiGeneratedDescription && (
-                    <p className="text-sm text-slate-500 mt-2">
-                        AI-generated suggestion: <span className="font-medium text-slate-700">{aiGeneratedDescription}</span>
-                    </p>
+                    <div className="flex flex-col gap-2 mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-blue-900">AI-Generated Description</p>
+                                <p className="text-sm text-blue-800 mt-1">{aiGeneratedDescription}</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setProductInfo(prev => ({ ...prev, description: aiGeneratedDescription }))}
+                            className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition self-start"
+                        >
+                            Use AI Description
+                        </button>
+                    </div>
                 )}
             </label>
 
