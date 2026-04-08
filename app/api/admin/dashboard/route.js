@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
-
-const isAdminUser = (clerkUser) => {
-    if (!clerkUser) return false
-    const email = clerkUser.emailAddresses?.[0]?.emailAddress?.toLowerCase?.() || ''
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim().toLowerCase()) || []
-    return adminEmails.includes(email)
-}
+import { isAdminUser } from '@/lib/security'
 
 export async function GET() {
     try {
-        const clerkUser = await getCurrentUser()
-        if (!isAdminUser(clerkUser)) {
+        const isAdmin = await isAdminUser()
+        if (!isAdmin) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
