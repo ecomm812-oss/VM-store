@@ -2,55 +2,63 @@
 import { useRouter } from 'next/navigation'
 import { SignIn } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading'
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const { isSignedIn, user, isLoaded } = useUser()
+  const [accessDenied, setAccessDenied] = useState(false)
+  const [deniedEmail, setDeniedEmail] = useState('')
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && user) {
-      const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || ''
-      const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim().toLowerCase()) || []
-      
-      if (adminEmails.includes(userEmail)) {
-        router.push('/admin')
+    const verifyAdminAccess = async () => {
+      if (isLoaded && isSignedIn && user) {
+        try {
+          const response = await fetch('/api/admin/auth')
+          if (response.ok) {
+            // User is admin, redirect to dashboard
+            router.push('/admin')
+          } else if (response.status === 403) {
+            // User is authenticated but not admin
+            setAccessDenied(true)
+            setDeniedEmail(user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || '')
+          }
+        } catch (error) {
+          console.error('Admin verification failed:', error)
+          setAccessDenied(true)
+          setDeniedEmail(user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || '')
+        } finally {
+          setChecking(false)
+        }
       } else {
-        // User is logged in but not admin
-        setTimeout(() => {
-          router.push('/')
-        }, 2000)
+        setChecking(false)
       }
     }
+
+    verifyAdminAccess()
   }, [isLoaded, isSignedIn, user, router])
 
-  if (!isLoaded) {
+  if (!isLoaded || checking) {
     return <Loading />
   }
 
-  if (isSignedIn && user) {
-    const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase?.() || ''
-    const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(email => email.trim().toLowerCase()) || []
-    
-    if (adminEmails.includes(userEmail)) {
-      return <Loading />
-    } else {
-      return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-          <div className="text-center">
-            <h1 className="text-2xl font-semibold text-red-600 mb-4">Access Denied</h1>
-            <p className="text-slate-600 mb-4">Your email ({userEmail}) is not authorized for admin access.</p>
-            <button 
-              onClick={() => router.push('/')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Go Home
-            </button>
-          </div>
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-slate-600 mb-4">Your email ({deniedEmail}) is not authorized for admin access.</p>
+          <button 
+            onClick={() => router.push('/')}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Go Home
+          </button>
         </div>
-      )
-    }
+      </div>
+    )
   }
 
   return (
