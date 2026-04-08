@@ -3,7 +3,7 @@ import { currentUser } from '@clerk/nextjs/server'
 
 export async function GET() {
   try {
-    const clerkUser = await currentUser()
+    const clerkUser = await getCurrentUser()
     if (!clerkUser) {
       console.log('No clerk user found')
       return NextResponse.json({ isAdmin: false, message: 'Unauthorized' }, { status: 401 })

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
 import { sendOrderStatusNotification } from '@/lib/email'
 
 export async function GET(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -59,7 +59,7 @@ export async function GET(request) {
 
 export async function PUT(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }

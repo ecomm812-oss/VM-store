@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
 
 export async function GET(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             console.log('No Clerk user found')
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

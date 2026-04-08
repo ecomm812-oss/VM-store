@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
 import { OrderStatus } from '@prisma/client'
 import { sendOrderStatusNotification } from '@/lib/email'
 
@@ -8,7 +8,7 @@ export async function PUT(request) {
     try {
         console.log('Cancel order API called');
 
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             console.log('No clerk user found');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

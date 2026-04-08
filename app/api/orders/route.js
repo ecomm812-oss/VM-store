@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
 import Razorpay from 'razorpay'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 export async function POST(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Authentication required.', code: 401 }, { status: 401 })
         }
@@ -182,7 +182,7 @@ export async function POST(request) {
 
 export async function GET() {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -227,7 +227,7 @@ export async function GET() {
 
 export async function PUT(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }

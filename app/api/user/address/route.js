@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { currentUser } from '@clerk/nextjs/server'
-import { sanitizeInput, createSecureErrorResponse } from '@/lib/security'
+import { getCurrentUser, sanitizeInput, createSecureErrorResponse } from '@/lib/security'
 
 export async function POST(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return createSecureErrorResponse('address creation', 401)
         }
@@ -100,7 +99,7 @@ export async function POST(request) {
 
 export async function GET(request) {
     try {
-        const clerkUser = await currentUser()
+        const clerkUser = await getCurrentUser()
         if (!clerkUser) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
