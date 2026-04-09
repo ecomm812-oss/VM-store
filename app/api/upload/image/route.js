@@ -4,20 +4,42 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { auth } from '@clerk/nextjs/server'
 import { validateFileUpload, createSecureErrorResponse } from '@/lib/security'
-import { put } from '@vercel/blob'
+// import { put } from '@vercel/blob' // Import conditionally below
 import { analyzeImage, shouldApproveImage } from '@/lib/ai-image-analysis'
 
 export async function POST(request) {
     try {
         // Check authentication - any logged-in user can upload
-        const { userId: clerkId } = await auth()
-        console.log('Clerk user check:', clerkId ? 'User found' : 'No user found')
-        if (!clerkId) {
-            return createSecureErrorResponse('file upload', 401)
+        // In development mode with placeholder Clerk keys, bypass auth check
+        const isDevMode = process.env.NODE_ENV !== 'production' && (
+            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+            !process.env.CLERK_SECRET_KEY ||
+            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
+            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
+        )
+
+        let clerkId
+        if (isDevMode) {
+            console.log('Development mode: Bypassing Clerk auth for image upload')
+            clerkId = 'dev_test_user_' + Date.now()
+        } else {
+            const authResult = await auth()
+            clerkId = authResult.userId
+            console.log('Clerk user check:', clerkId ? 'User found' : 'No user found')
+            if (!clerkId) {
+                return createSecureErrorResponse('file upload', 401)
+            }
         }
 
         const data = await request.formData()
         const file = data.get('file')
+
+        console.log('Upload request received:', {
+            hasFile: !!file,
+            fileName: file?.name,
+            fileSize: file?.size,
+            fileType: file?.type
+        })
 
         if (!file) {
             return NextResponse.json({ error: 'No file received.', code: 400 }, { status: 400 })
@@ -30,8 +52,15 @@ export async function POST(request) {
         }
 
         // Convert file to buffer
-        const bytes = await file.arrayBuffer()
-        const buffer = Buffer.from(bytes)
+        let buffer
+        try {
+            const bytes = await file.arrayBuffer()
+            buffer = Buffer.from(bytes)
+            console.log('File converted to buffer, size:', buffer.length)
+        } catch (bufferError) {
+            console.error('Failed to convert file to buffer:', bufferError)
+            return NextResponse.json({ error: 'Failed to process file data', code: 400 }, { status: 400 })
+        }
 
         // Generate secure unique filename with proper extension
         const originalExt = file.name.split('.').pop()?.toLowerCase() || 'jpg'
@@ -44,38 +73,38 @@ export async function POST(request) {
         const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV
         console.log('Environment check:', { NODE_ENV: process.env.NODE_ENV, VERCEL: process.env.VERCEL, isVercel })
 
-        if (isVercel || process.env.NODE_ENV === 'production') {
+        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
             console.log('Using Vercel Blob storage')
-            console.log('BLOB_READ_WRITE_TOKEN available:', !!process.env.BLOB_READ_WRITE_TOKEN)
+            try {
+                // Dynamically import Vercel Blob to avoid issues in development
+                const { put } = await import('@vercel/blob')
+                
+                // Use Vercel Blob in production
+                const blob = await put(fileName, buffer, {
+                    access: 'public',
+                    contentType: file.type
+                })
 
-            if (!process.env.BLOB_READ_WRITE_TOKEN) {
-                console.log('BLOB_READ_WRITE_TOKEN not available, using fallback data URL')
-                // Fallback: Convert to data URL for small images (not recommended for production)
-                const mimeType = file.type || 'image/jpeg'
-                const base64 = buffer.toString('base64')
-                imageUrl = `data:${mimeType};base64,${base64}`
-                console.log('Using data URL fallback for image upload')
-            } else {
+                imageUrl = blob.url
+                console.log('Blob upload successful:', imageUrl)
+            } catch (blobError) {
+                console.error('Blob upload failed:', blobError)
+                // Fallback to local storage if blob fails
+                console.log('Falling back to local file storage')
+                const uploadsDir = join(process.cwd(), 'public', 'uploads')
                 try {
-                    // Use Vercel Blob in production
-                    const blob = await put(fileName, buffer, {
-                        access: 'public',
-                        contentType: file.type
-                    })
-
-                    imageUrl = blob.url
-                    console.log('Blob upload successful:', imageUrl)
-                } catch (blobError) {
-                    console.error('Blob upload failed:', blobError)
-                    // Fallback to data URL if blob fails
-                    const mimeType = file.type || 'image/jpeg'
-                    const base64 = buffer.toString('base64')
-                    imageUrl = `data:${mimeType};base64,${base64}`
-                    console.log('Using data URL fallback after blob failure')
+                    await mkdir(uploadsDir, { recursive: true })
+                } catch (error) {
+                    console.error('Directory creation error:', error)
                 }
+
+                const filePath = join(uploadsDir, fileName)
+                await writeFile(filePath, buffer)
+                imageUrl = `/uploads/${fileName}`
+                console.log('Local file saved:', imageUrl)
             }
         } else {
-            console.log('Using local file storage')
+            console.log('Using local file storage (development mode)')
             // Use local file storage in development
             // Create uploads directory if it doesn't exist
             const uploadsDir = join(process.cwd(), 'public', 'uploads')
