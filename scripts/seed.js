@@ -1,11 +1,13 @@
 const { PrismaClient } = require('@prisma/client')
 
+// Use the same configuration as lib/prisma.js
 const prisma = new PrismaClient()
 
 async function main() {
     // Create a sample user
     const user = await prisma.user.create({
         data: {
+            clerkId: 'dev_user_' + Date.now(), // Generate a unique clerkId for dev
             name: 'Sample User',
             email: 'sample@example.com',
             image: 'https://example.com/image.png'

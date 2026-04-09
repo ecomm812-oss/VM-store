@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
+    provider = "sqlite"
 }
 
 // Required for creating a User: id, name, email, image, cart (optional JSON string)
@@ -15,7 +15,7 @@ model User {
     name    String
     email   String @unique
     image   String
-    cart    Json   @default("{}")
+    cart    String @default("{}")
 
     // Relations
     ratings     Rating[]
@@ -31,9 +31,9 @@ model Product {
     description String
     mrp         Float
     price       Float
-    images      String[]
+    images      String @default("[]")
     category    String
-    sizes       String[]
+    sizes       String @default("[]")
     inStock     Boolean  @default(true)
     storeId     String
     createdAt   DateTime @default(now())
@@ -71,7 +71,7 @@ model Order {
     createdAt       DateTime      @default(now())
     updatedAt       DateTime      @updatedAt
     isCouponUsed    Boolean       @default(false)
-    coupon          Json          @default("{}")
+    coupon          String        @default("{}")
     orderItems      OrderItem[]
     trackingNumber  String?
     trackingUrl     String?
