@@ -48,17 +48,42 @@ export async function GET() {
 
 export async function POST(request) {
     try {
-        const clerkUser = await getCurrentUser()
-        
-        if (!clerkUser) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        // For development without Clerk, use a bypass system
+        const isDevMode = process.env.NODE_ENV !== 'production' && (
+            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+            !process.env.CLERK_SECRET_KEY ||
+            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
+            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
+        )
+
+        let clerkId
+        let clerkUser
+
+        if (isDevMode) {
+            console.log('Development mode: Using dev user for store creation')
+            // In development without Clerk, use a default test clerk ID
+            clerkId = 'dev_test_user_' + Date.now()
+            clerkUser = {
+                id: clerkId,
+                firstName: 'Test',
+                lastName: 'User',
+                emailAddresses: [{ emailAddress: 'test@example.com' }],
+                imageUrl: 'https://via.placeholder.com/150'
+            }
+        } else {
+            clerkUser = await getCurrentUser()
+            
+            if (!clerkUser) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+            clerkId = clerkUser.id
         }
 
-        console.log('Creating store for clerkId:', clerkUser.id)
+        console.log('Creating store for clerkId:', clerkId)
 
         // Find the user in our database, or create if not exists
         let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+            where: { clerkId: clerkId }
         })
 
         if (!user) {
@@ -66,7 +91,7 @@ export async function POST(request) {
             // Create user if they don't exist
             user = await prisma.user.create({
                 data: {
-                    clerkId: clerkUser.id,
+                    clerkId: clerkId,
                     name: clerkUser.firstName + ' ' + clerkUser.lastName,
                     email: clerkUser.emailAddresses[0].emailAddress,
                     image: clerkUser.imageUrl
@@ -109,7 +134,17 @@ export async function POST(request) {
         return NextResponse.json(store, { status: 201 })
     } catch (error) {
         console.error('Store creation error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        
+        // Handle specific error cases
+        if (error.code === 'P2002') {
+            return NextResponse.json({ error: 'Username already exists. Please choose a different username.' }, { status: 400 })
+        }
+        
+        if (error.message?.includes('Unique constraint failed')) {
+            return NextResponse.json({ error: 'This store already exists. Please use a different name or username.' }, { status: 400 })
+        }
+        
+        return NextResponse.json({ error: error.message || 'Failed to create store', full_error: error.toString() }, { status: 500 })
     }
 }
 

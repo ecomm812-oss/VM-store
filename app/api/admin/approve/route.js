@@ -4,10 +4,22 @@ import { isAdminUser, createSecureErrorResponse } from '@/lib/security'
 
 export async function GET() {
     try {
-        // Check admin authentication
-        const isAdmin = await isAdminUser()
-        if (!isAdmin) {
-            return createSecureErrorResponse('admin access', 403)
+        // In development mode with placeholder Clerk keys, bypass auth check
+        const isDevMode = process.env.NODE_ENV !== 'production' && (
+            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+            !process.env.CLERK_SECRET_KEY ||
+            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
+            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
+        )
+
+        if (!isDevMode) {
+            // Check admin authentication only in production
+            const isAdmin = await isAdminUser()
+            if (!isAdmin) {
+                return createSecureErrorResponse('admin access', 403)
+            }
+        } else {
+            console.log('Development mode: Bypassing admin auth for approve endpoint')
         }
 
         const pendingStores = await prisma.store.findMany({
@@ -39,10 +51,22 @@ export async function GET() {
 
 export async function PATCH(request) {
     try {
-        // Check admin authentication
-        const isAdmin = await isAdminUser()
-        if (!isAdmin) {
-            return createSecureErrorResponse('admin access', 403)
+        // In development mode with placeholder Clerk keys, bypass auth check
+        const isDevMode = process.env.NODE_ENV !== 'production' && (
+            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+            !process.env.CLERK_SECRET_KEY ||
+            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
+            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
+        )
+
+        if (!isDevMode) {
+            // Check admin authentication only in production
+            const isAdmin = await isAdminUser()
+            if (!isAdmin) {
+                return createSecureErrorResponse('admin access', 403)
+            }
+        } else {
+            console.log('Development mode: Bypassing admin auth for approve endpoint')
         }
 
         const { storeId, status } = await request.json()
