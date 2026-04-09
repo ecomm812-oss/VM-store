@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
-import { auth } from '@clerk/nextjs/server'
-import { validateFileUpload, createSecureErrorResponse } from '@/lib/security'
+import { validateFileUpload, createSecureErrorResponse, getCurrentUser } from '@/lib/security'
 // import { put } from '@vercel/blob' // Import conditionally below
-import { analyzeImage, shouldApproveImage } from '@/lib/ai-image-analysis'
+import { analyzeImage } from '@/lib/ai-image-analysis'
 
 export async function POST(request) {
     try {
@@ -23,8 +22,9 @@ export async function POST(request) {
             console.log('Development mode: Bypassing Clerk auth for image upload')
             clerkId = 'dev_test_user_' + Date.now()
         } else {
-            const authResult = await auth()
-            clerkId = authResult.userId
+            const clerkUser = await getCurrentUser()
+            clerkId = clerkUser?.id
+
             console.log('Clerk user check:', clerkId ? 'User found' : 'No user found')
             if (!clerkId) {
                 return createSecureErrorResponse('file upload', 401)

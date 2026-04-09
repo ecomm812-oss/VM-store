@@ -44,32 +44,25 @@ export default function CreateStore() {
         if (!user) return
         
         try {
-            // First get the user from our database
-            const userResponse = await fetch('/api/user')
-            if (!userResponse.ok) {
-                console.error('Failed to get user data')
-                setLoading(false)
-                return
-            }
-            const dbUser = await userResponse.json()
-
-            const response = await fetch('/api/admin/stores')
+            const response = await fetch('/api/store/info', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
             if (response.ok) {
-                const stores = await response.json()
-                const userStore = stores.find(store => store.userId === dbUser.id)
-                
-                if (userStore) {
-                    setAlreadySubmitted(true)
-                    setStatus(userStore.status)
-                    if (userStore.status === 'approved') {
-                        setMessage('Your store has been approved! Redirecting to dashboard...')
-                        setTimeout(() => router.push('/store'), 5000)
-                    } else if (userStore.status === 'pending') {
-                        setMessage('Your store is pending approval. Please wait for admin verification.')
-                    } else {
-                        setMessage('Your store application was rejected. Please try again.')
-                    }
+                const store = await response.json()
+                setAlreadySubmitted(true)
+                setStatus(store.status)
+                if (store.status === 'approved') {
+                    setMessage('Your store has been approved! Redirecting to dashboard...')
+                    setTimeout(() => router.push('/store'), 5000)
+                } else if (store.status === 'pending') {
+                    setMessage('Your store is pending approval. Please wait for admin verification.')
+                } else {
+                    setMessage('Your store application was rejected. Please try again.')
                 }
+            } else if (response.status !== 404) {
+                const error = await response.json().catch(() => ({}))
+                console.error('Failed to fetch store info:', response.status, error)
             }
         } catch (error) {
             console.error('Error fetching seller status:', error)
@@ -103,7 +96,8 @@ export default function CreateStore() {
                 try {
                     const uploadResponse = await fetch('/api/upload/image', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        credentials: 'same-origin'
                     })
 
                     if (uploadResponse.ok) {
@@ -146,8 +140,9 @@ export default function CreateStore() {
                 logo: logoUrl
             }
 
-            const response = await fetch('/api/admin/stores', {
+            const response = await fetch('/api/store/create', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json'
                 },

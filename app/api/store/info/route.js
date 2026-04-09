@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
 
-export async function GET(request) {
+export async function GET() {
     try {
         const clerkUser = await getCurrentUser()
         if (!clerkUser) {

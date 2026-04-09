@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
 import { sendOrderStatusNotification } from '@/lib/email'
 
-export async function GET(request) {
+export async function GET() {
     try {
         const clerkUser = await getCurrentUser()
         if (!clerkUser) {

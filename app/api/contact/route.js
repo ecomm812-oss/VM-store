@@ -44,7 +44,7 @@ export async function POST(request) {
     }
 }
 
-export async function GET(request) {
+export async function GET() {
     // This could be used by admin to view contact inquiries
     // For now, just return a message
     return NextResponse.json({ message: 'Contact inquiries are handled by admin panel' });

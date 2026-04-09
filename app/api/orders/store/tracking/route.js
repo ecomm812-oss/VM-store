@@ -88,7 +88,7 @@ export async function PUT(request) {
         if (trackingUrl) {
             try {
                 new URL(trackingUrl)
-            } catch (e) {
+            } catch {
                 return NextResponse.json({ error: 'Invalid tracking URL format' }, { status: 400 })
             }
         }
