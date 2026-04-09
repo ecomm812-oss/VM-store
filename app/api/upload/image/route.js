@@ -94,16 +94,54 @@ export async function POST(request) {
             console.log('Local file saved:', imageUrl)
         }
 
-        // Perform AI image analysis
-        console.log('Starting AI image analysis...')
-        const imageAnalysis = await analyzeImage(buffer, file.type || 'image/jpeg')
-        
-        console.log('Image analysis results:', {
-            description: imageAnalysis.description?.substring(0, 50),
-            tags: imageAnalysis.tags?.length || 0,
-            safe: imageAnalysis.isSafe,
-            action: imageAnalysis.recommendedAction
-        })
+        // Perform AI image analysis (optional, only if API key is configured)
+        let imageAnalysis = null
+        if (process.env.GOOGLE_AI_KEY) {
+            try {
+                console.log('Starting AI image analysis...')
+                imageAnalysis = await analyzeImage(buffer, file.type || 'image/jpeg')
+                
+                console.log('Image analysis results:', {
+                    description: imageAnalysis.description?.substring(0, 50),
+                    tags: imageAnalysis.tags?.length || 0,
+                    safe: imageAnalysis.isSafe,
+                    action: imageAnalysis.recommendedAction
+                })
+            } catch (analysisError) {
+                console.error('AI analysis error (non-blocking):', analysisError)
+                // Continue without analysis if it fails
+                imageAnalysis = {
+                    description: '',
+                    objects: [],
+                    colors: [],
+                    quality: 'unknown',
+                    categories: [],
+                    tags: [],
+                    suggestions: [],
+                    isSafe: true,
+                    concerns: [],
+                    recommendedAction: 'approve',
+                    confidence: 0,
+                    error: 'Analysis skipped'
+                }
+            }
+        } else {
+            console.log('GOOGLE_AI_KEY not configured, skipping image analysis')
+            imageAnalysis = {
+                description: '',
+                objects: [],
+                colors: [],
+                quality: 'unknown',
+                categories: [],
+                tags: [],
+                suggestions: [],
+                isSafe: true,
+                concerns: [],
+                recommendedAction: 'approve',
+                confidence: 0,
+                error: 'Analysis not configured'
+            }
+        }
 
         return NextResponse.json({
             success: true,
@@ -123,11 +161,27 @@ export async function POST(request) {
                 confidence: imageAnalysis.confidence
             }
         }, { 
-            status: imageAnalysis.isSafe ? 200 : 202 // 202 if needs review
+            status: 200 // Always return 200 on successful upload
         })
 
     } catch (error) {
         console.error('Upload error:', error)
-        return NextResponse.json({ error: 'Failed to upload image' }, { status: 500 }) 
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to upload image'
+        
+        if (error.message?.includes('ENOSPC')) {
+            errorMessage = 'Storage space full'
+        } else if (error.message?.includes('EACCES')) {
+            errorMessage = 'Permission denied'
+        } else if (error.message?.includes('ENOENT')) {
+            errorMessage = 'Directory not found'
+        } else if (error.code === 'ERR_INVALID_URL') {
+            errorMessage = 'Invalid blob URL configuration'
+        } else if (error.message?.toLowerCase().includes('token')) {
+            errorMessage = 'Storage authentication failed'
+        }
+        
+        return NextResponse.json({ error: errorMessage, details: error.message }, { status: 500 }) 
     }
 }

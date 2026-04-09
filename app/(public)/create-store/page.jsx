@@ -109,16 +109,17 @@ export default function CreateStore() {
                     if (uploadResponse.ok) {
                         const uploadData = await uploadResponse.json()
                         logoUrl = uploadData.url
+                        console.log('Logo uploaded successfully:', logoUrl)
                     } else {
                         const errorData = await uploadResponse.json().catch(() => ({}))
-                        const errorMessage = errorData.error || `Upload failed with status ${uploadResponse.status}`
+                        const errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
                         console.error('Logo upload error:', errorMessage, errorData)
-                        toast.error(errorMessage)
+                        toast.error(`Upload failed: ${errorMessage}`)
                         return
                     }
                 } catch (uploadError) {
-                    console.error('Logo upload error:', uploadError)
-                    toast.error('Failed to upload logo. Please check your file and try again.')
+                    console.error('Logo upload network error:', uploadError)
+                    toast.error('Network error: Failed to upload logo. Check your connection and try again.')
                     return
                 }
             }
