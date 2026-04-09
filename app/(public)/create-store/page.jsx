@@ -112,7 +112,19 @@ export default function CreateStore() {
                         console.log('Logo uploaded successfully:', logoUrl)
                     } else {
                         const errorData = await uploadResponse.json().catch(() => ({}))
-                        const errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
+                        
+                        // Provide user-friendly error messages based on status code
+                        let errorMessage
+                        if (uploadResponse.status === 413) {
+                            errorMessage = 'File is too large. Maximum file size is 5MB.'
+                        } else if (uploadResponse.status === 400) {
+                            errorMessage = errorData.error || 'Invalid file. Please use JPG, PNG, GIF, or WebP format.'
+                        } else if (uploadResponse.status === 401) {
+                            errorMessage = 'Authentication failed. Please login and try again.'
+                        } else {
+                            errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
+                        }
+                        
                         console.error('Logo upload error:', errorMessage, errorData)
                         toast.error(`Upload failed: ${errorMessage}`)
                         return

@@ -185,3 +185,6 @@ export async function POST(request) {
         return NextResponse.json({ error: errorMessage, details: error.message }, { status: 500 }) 
     }
 }
+
+// Configure this route for long operations (file upload and AI analysis)
+export const maxDuration = 60  // 60 seconds max duration
