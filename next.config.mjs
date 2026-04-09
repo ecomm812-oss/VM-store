@@ -4,13 +4,6 @@ const nextConfig = {
         unoptimized: true
     },
 
-    // Increase body size limit for file uploads (default is 4MB)
-    api: {
-        bodyParser: {
-            sizeLimit: '50mb'
-        }
-    },
-
     // Security headers
     async headers() {
         return [
