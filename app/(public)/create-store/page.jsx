@@ -125,13 +125,11 @@ export default function CreateStore() {
                         }
                         
                         console.error('Logo upload error:', errorMessage, errorData)
-                        toast.error(`Upload failed: ${errorMessage}`)
-                        return
+                        throw new Error(`Upload failed: ${errorMessage}`)
                     }
                 } catch (uploadError) {
                     console.error('Logo upload network error:', uploadError)
-                    toast.error('Network error: Failed to upload logo. Check your connection and try again.')
-                    return
+                    throw new Error(uploadError?.message || 'Network error: Failed to upload logo. Check your connection and try again.')
                 }
             }
 
@@ -163,14 +161,13 @@ export default function CreateStore() {
             } else {
                 const error = await response.json()
                 if (response.status === 401) {
-                    toast.error('Session expired. Please sign in again and retry.')
-                    return
+                    throw new Error('Session expired. Please sign in again and retry.')
                 }
-                toast.error(error.error || 'Failed to create store')
+                throw new Error(error.error || 'Failed to create store')
             }
         } catch (error) {
-            toast.error('Error submitting store')
             console.error(error)
+            toast.error(error?.message || 'Error submitting store')
         }
     }
 
@@ -186,7 +183,7 @@ export default function CreateStore() {
         <>
             {!alreadySubmitted ? (
                 <div className="mx-6 min-h-[70vh] my-16">
-                    <form onSubmit={e => toast.promise(onSubmitHandler(e), { loading: "Submitting data..." })} className="max-w-7xl mx-auto flex flex-col items-start gap-3 text-slate-500">
+                    <form onSubmit={onSubmitHandler} className="max-w-7xl mx-auto flex flex-col items-start gap-3 text-slate-500">
                         {/* Title */}
                         <div>
                             <h1 className="text-3xl ">Add Your <span className="text-slate-800 font-medium">Store</span></h1>

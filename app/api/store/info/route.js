@@ -2,6 +2,45 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
+async function resolveUserForStoreInfo(clerkId) {
+    let user = await prisma.user.findUnique({ where: { clerkId } })
+    if (user) return user
+
+    const clerkUser = await currentUser().catch(() => null)
+    const displayName = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim()
+    const resolvedEmail = (
+        clerkUser?.emailAddresses?.[0]?.emailAddress ||
+        clerkUser?.primaryEmailAddress?.emailAddress ||
+        `${clerkId}@clerk.local`
+    ).toLowerCase()
+
+    try {
+        return await prisma.user.create({
+            data: {
+                clerkId,
+                name: displayName || 'Store Owner',
+                email: resolvedEmail,
+                image: clerkUser?.imageUrl || ''
+            }
+        })
+    } catch (error) {
+        if (error?.code === 'P2002') {
+            const existingByEmail = await prisma.user.findUnique({ where: { email: resolvedEmail } })
+            if (existingByEmail) {
+                return prisma.user.update({
+                    where: { id: existingByEmail.id },
+                    data: {
+                        clerkId,
+                        name: existingByEmail.name || displayName || 'Store Owner',
+                        image: existingByEmail.image || clerkUser?.imageUrl || ''
+                    }
+                })
+            }
+        }
+        throw error
+    }
+}
+
 export async function GET() {
     try {
         const { userId: clerkId } = await auth()
@@ -12,27 +51,8 @@ export async function GET() {
 
         console.log('Looking up user with clerkId:', clerkId)
 
-        // Find the user in our database, or create if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId }
-        })
-
-        if (!user) {
-            console.log('User not found, creating new user')
-            const clerkUser = await currentUser().catch(() => null)
-            const displayName = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim()
-            const resolvedEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || clerkUser?.primaryEmailAddress?.emailAddress || ''
-
-            // Create user if they don't exist
-            user = await prisma.user.create({
-                data: {
-                    clerkId,
-                    name: displayName || 'Store Owner',
-                    email: resolvedEmail,
-                    image: clerkUser?.imageUrl || ''
-                }
-            })
-        }
+        // Find the user in our database, or create if not exists.
+        const user = await resolveUserForStoreInfo(clerkId)
 
         console.log('User found/created:', { id: user.id, clerkId: user.clerkId })
 
