@@ -30,7 +30,14 @@ export default function StoreOrders() {
                 const data = await response.json()
                 setOrders(data)
             } else {
-                toast.error('Failed to fetch orders')
+                const errorData = await response.json().catch(() => ({}))
+
+                if (response.status === 401) {
+                    toast.error('Authentication required. Please login again.')
+                    return
+                }
+
+                toast.error(errorData.error || 'Failed to fetch orders')
             }
         } catch (error) {
             toast.error('Failed to fetch orders')
