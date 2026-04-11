@@ -1,9 +1,8 @@
 module.exports = {
   datasource: {
-    // Use SQLite for development, PostgreSQL for production
-    url: process.env.NODE_ENV === 'production'
-      ? process.env.DATABASE_URL
-      : "file:./dev.db"
+    // Keep Prisma CLI and app runtime on the same database.
+    // Falling back to SQLite can cause "data not showing" when app reads Postgres.
+    url: process.env.DATABASE_URL || process.env.DIRECT_URL || "file:./dev.db"
   },
 }
 

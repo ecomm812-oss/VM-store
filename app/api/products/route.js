@@ -42,35 +42,36 @@ export async function GET(request) {
             }
         })
 
-        // Parse JSON string fields and validate products
+        // Parse JSON fields safely and normalize legacy image shapes.
         const validProducts = products
             .map(product => {
                 try {
+                    const parsedImages = typeof product.images === 'string' ? JSON.parse(product.images) : product.images
+                    const parsedSizes = typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+
+                    const normalizedImages = Array.isArray(parsedImages)
+                        ? parsedImages
+                            .map(image => {
+                                if (typeof image === 'string') return image
+                                if (image && typeof image === 'object') {
+                                    return image.src || image.url || null
+                                }
+                                return null
+                            })
+                            .filter(Boolean)
+                        : []
+
                     return {
                         ...product,
-                        images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
-                        sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+                        images: normalizedImages,
+                        sizes: Array.isArray(parsedSizes) ? parsedSizes : []
                     }
                 } catch (error) {
                     console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error)
                     return null
                 }
             })
-            .filter(product => {
-                return (
-                    product &&
-                    product.id &&
-                    product.name &&
-                    product.price !== undefined &&
-                    product.images &&
-                    Array.isArray(product.images) &&
-                    product.images.length > 0 &&
-                    product.category &&
-                    product.storeId &&
-                    product.store &&
-                    product.store.id
-                )
-            })
+            .filter(product => product && product.id && product.name && product.price !== undefined && product.images.length > 0)
 
         if (validProducts.length < products.length) {
             console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
