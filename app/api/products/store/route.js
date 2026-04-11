@@ -43,7 +43,14 @@ export async function GET() {
             orderBy: { createdAt: 'desc' }
         })
 
-        return NextResponse.json(products)
+        // Parse JSON string fields
+        const parsedProducts = products.map(product => ({
+            ...product,
+            images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
+            sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+        }))
+
+        return NextResponse.json(parsedProducts)
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

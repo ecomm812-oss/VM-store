@@ -30,9 +30,16 @@ export async function GET(request, { params }) {
             }
         })
 
+        // Parse JSON string fields
+        const parsedProducts = products.map(product => ({
+            ...product,
+            images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
+            sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+        }))
+
         return NextResponse.json({
             store,
-            products
+            products: parsedProducts
         })
     } catch (error) {
         console.error('Store shop error:', error)

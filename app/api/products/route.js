@@ -42,22 +42,35 @@ export async function GET(request) {
             }
         })
 
-        // Validate products - filter out any with missing required fields
-        const validProducts = products.filter(product => {
-            return (
-                product &&
-                product.id &&
-                product.name &&
-                product.price !== undefined &&
-                product.images &&
-                Array.isArray(product.images) &&
-                product.images.length > 0 &&
-                product.category &&
-                product.storeId &&
-                product.store &&
-                product.store.id
-            )
-        })
+        // Parse JSON string fields and validate products
+        const validProducts = products
+            .map(product => {
+                try {
+                    return {
+                        ...product,
+                        images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
+                        sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+                    }
+                } catch (error) {
+                    console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error)
+                    return null
+                }
+            })
+            .filter(product => {
+                return (
+                    product &&
+                    product.id &&
+                    product.name &&
+                    product.price !== undefined &&
+                    product.images &&
+                    Array.isArray(product.images) &&
+                    product.images.length > 0 &&
+                    product.category &&
+                    product.storeId &&
+                    product.store &&
+                    product.store.id
+                )
+            })
 
         if (validProducts.length < products.length) {
             console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
@@ -103,7 +116,7 @@ export async function POST(request) {
         }
 
         const body = await request.json()
-        const { name, description, mrp, price, category, images } = body
+        const { name, description, mrp, price, category, images, sizes } = body
 
         if (!name || !description || !mrp || !price || !category || !images || images.length === 0) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
@@ -115,13 +128,23 @@ export async function POST(request) {
                 description,
                 mrp: parseFloat(mrp),
                 price: parseFloat(price),
-                images,
+                images: JSON.stringify(Array.isArray(images) ? images : []),
+                sizes: JSON.stringify(Array.isArray(sizes) ? sizes : []),
                 category,
                 storeId: store.id
+            },
+            include: {
+                store: true,
+                rating: true
             }
         })
 
-        return NextResponse.json(product, { status: 201 })
+        // Parse the JSON strings for response
+        return NextResponse.json({
+            ...product,
+            images: JSON.parse(product.images),
+            sizes: JSON.parse(product.sizes)
+        }, { status: 201 })
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
