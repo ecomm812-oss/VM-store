@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { auth, currentUser } from '@clerk/nextjs/server'
 
 export async function POST(request) {
   try {
-    const clerkUser = await getCurrentUser()
-    if (!clerkUser) {
+    const { userId: clerkId } = await auth()
+    if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -16,16 +16,20 @@ export async function POST(request) {
     }
 
     let user = await prisma.user.findUnique({
-      where: { clerkId: clerkUser.id }
+      where: { clerkId }
     })
 
     if (!user) {
+      const clerkUser = await currentUser().catch(() => null)
+      const displayName = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim()
+      const resolvedEmail = clerkUser?.emailAddresses?.[0]?.emailAddress || clerkUser?.primaryEmailAddress?.emailAddress || email || ''
+
       user = await prisma.user.create({
         data: {
-          clerkId: clerkUser.id,
-          name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
-          email: clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.primaryEmailAddress?.emailAddress || email,
-          image: clerkUser.imageUrl || ''
+          clerkId,
+          name: displayName || 'Store Owner',
+          email: resolvedEmail,
+          image: clerkUser?.imageUrl || ''
         }
       })
     }

@@ -10,7 +10,7 @@ import { useUser } from "@clerk/nextjs"
 export default function CreateStore() {
 
     const router = useRouter()
-    const { user } = useUser()
+    const { user, isLoaded, isSignedIn } = useUser()
     const [alreadySubmitted, setAlreadySubmitted] = useState(false)
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
@@ -74,7 +74,12 @@ export default function CreateStore() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         
-        if (!user) {
+        if (!isLoaded) {
+            toast.error('Checking your session. Please try again in a moment.')
+            return
+        }
+
+        if (!isSignedIn || !user) {
             toast.error('Please login first')
             return
         }
@@ -114,7 +119,7 @@ export default function CreateStore() {
                         } else if (uploadResponse.status === 400) {
                             errorMessage = errorData.error || 'Invalid file. Please use JPG, PNG, GIF, or WebP format.'
                         } else if (uploadResponse.status === 401) {
-                            errorMessage = 'Authentication failed. Please login and try again.'
+                            errorMessage = 'Session expired. Please sign in again and retry.'
                         } else {
                             errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
                         }
@@ -157,6 +162,10 @@ export default function CreateStore() {
                 setMessage('Your store has been submitted for review. Please wait for admin verification.')
             } else {
                 const error = await response.json()
+                if (response.status === 401) {
+                    toast.error('Session expired. Please sign in again and retry.')
+                    return
+                }
                 toast.error(error.error || 'Failed to create store')
             }
         } catch (error) {

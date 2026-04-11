@@ -3,6 +3,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { validateFileUpload, createSecureErrorResponse, getCurrentUser } from '@/lib/security'
+import { auth } from '@clerk/nextjs/server'
 // import { put } from '@vercel/blob' // Import conditionally below
 import { analyzeImage } from '@/lib/ai-image-analysis'
 
@@ -22,8 +23,13 @@ export async function POST(request) {
             console.log('Development mode: Bypassing Clerk auth for image upload')
             clerkId = 'dev_test_user_' + Date.now()
         } else {
-            const clerkUser = await getCurrentUser()
-            clerkId = clerkUser?.id
+            const { userId } = await auth()
+            clerkId = userId
+
+            if (!clerkId) {
+                const clerkUser = await getCurrentUser()
+                clerkId = clerkUser?.id
+            }
 
             console.log('Clerk user check:', clerkId ? 'User found' : 'No user found')
             if (!clerkId) {
