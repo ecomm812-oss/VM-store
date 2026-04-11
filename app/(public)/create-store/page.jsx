@@ -159,11 +159,11 @@ export default function CreateStore() {
                 setStatus('pending')
                 setMessage('Your store has been submitted for review. Please wait for admin verification.')
             } else {
-                const error = await response.json()
+                const error = await response.json().catch(() => ({}))
                 if (response.status === 401) {
                     throw new Error('Session expired. Please sign in again and retry.')
                 }
-                throw new Error(error.error || 'Failed to create store')
+                throw new Error(error.error || error.details || 'Failed to create store')
             }
         } catch (error) {
             console.error(error)

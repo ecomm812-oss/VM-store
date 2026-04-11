@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
+
+async function resolveClerkId() {
+  try {
+    const { userId } = await auth()
+    if (userId) return userId
+  } catch (error) {
+    console.warn('auth() failed in store create route:', error)
+  }
+
+  const fallbackUser = await getCurrentUser()
+  return fallbackUser?.id || null
+}
 
 async function resolveUserForStore(clerkId, fallbackEmail) {
   let user = await prisma.user.findUnique({ where: { clerkId } })
@@ -45,7 +58,7 @@ async function resolveUserForStore(clerkId, fallbackEmail) {
 
 export async function POST(request) {
   try {
-    const { userId: clerkId } = await auth()
+    const clerkId = await resolveClerkId()
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -110,6 +123,6 @@ export async function POST(request) {
       return NextResponse.json({ error: 'A duplicate record already exists.' }, { status: 400 })
     }
 
-    return NextResponse.json({ error: 'Failed to create store', details: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to create store', details: error.message }, { status: 500 })
   }
 }

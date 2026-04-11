@@ -1,6 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth, currentUser } from '@clerk/nextjs/server'
+import { getCurrentUser } from '@/lib/security'
+
+async function resolveClerkId() {
+    try {
+        const { userId } = await auth()
+        if (userId) return userId
+    } catch (error) {
+        console.warn('auth() failed in store info route:', error)
+    }
+
+    const fallbackUser = await getCurrentUser()
+    return fallbackUser?.id || null
+}
 
 async function resolveUserForStoreInfo(clerkId) {
     let user = await prisma.user.findUnique({ where: { clerkId } })
@@ -43,7 +56,7 @@ async function resolveUserForStoreInfo(clerkId) {
 
 export async function GET() {
     try {
-        const { userId: clerkId } = await auth()
+        const clerkId = await resolveClerkId()
         if (!clerkId) {
             console.log('No Clerk user found')
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
