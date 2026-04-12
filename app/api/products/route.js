@@ -44,10 +44,15 @@ function normalizeFallbackProducts(products, search, category) {
 }
 
 function shouldUseFallback(error) {
+    const message = error?.message || ''
     return isDevelopment && (
+        error?.code === 'P1001' ||
         error?.code === 'ECONNREFUSED' ||
-        error?.message?.includes?.('ECONNREFUSED') ||
-        error?.message?.includes?.('Can\'t reach database server')
+        message.includes('ECONNREFUSED') ||
+        message.includes('Can\'t reach database server') ||
+        message.includes('Environment variable not found: DATABASE_URL') ||
+        message.includes('Invalid `prisma.') ||
+        message.includes('error validating datasource')
     )
 }
 

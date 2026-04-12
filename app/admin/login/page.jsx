@@ -9,19 +9,66 @@ const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').
 
 export default function AdminLoginPage() {
   if (!isClerkConfigured) {
+    return <AdminLoginWithoutClerk />
+  }
+
+  return <AdminLoginWithClerk />
+}
+
+function AdminLoginWithoutClerk() {
+  const router = useRouter()
+  const [checking, setChecking] = useState(true)
+  const [canAccessAdmin, setCanAccessAdmin] = useState(false)
+
+  useEffect(() => {
+    const verifyDevAccess = async () => {
+      try {
+        const response = await fetch('/api/admin/auth')
+        setCanAccessAdmin(response.ok)
+      } catch (error) {
+        console.error('Dev admin auth check failed:', error)
+        setCanAccessAdmin(false)
+      } finally {
+        setChecking(false)
+      }
+    }
+
+    verifyDevAccess()
+  }, [])
+
+  if (checking) {
+    return <Loading />
+  }
+
+  if (canAccessAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <div className="w-full max-w-xl bg-amber-50 border border-amber-200 rounded-lg p-6 text-amber-900">
-          <h1 className="text-2xl font-semibold mb-2">Admin login unavailable</h1>
-          <p>
-            Clerk is not configured in this environment. Add valid Clerk keys in .env.local and restart the dev server.
+        <div className="w-full max-w-xl bg-emerald-50 border border-emerald-200 rounded-lg p-6 text-emerald-900">
+          <h1 className="text-2xl font-semibold mb-2">Development Admin Access Enabled</h1>
+          <p className="mb-4">
+            Clerk is not configured, but development admin bypass is active for this environment.
           </p>
+          <button
+            onClick={() => router.push('/admin')}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          >
+            Continue to Admin Dashboard
+          </button>
         </div>
       </div>
     )
   }
 
-  return <AdminLoginWithClerk />
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-xl bg-amber-50 border border-amber-200 rounded-lg p-6 text-amber-900">
+        <h1 className="text-2xl font-semibold mb-2">Admin login unavailable</h1>
+        <p>
+          Clerk is not configured in this environment. Add valid Clerk keys in .env.local and restart the dev server.
+        </p>
+      </div>
+    </div>
+  )
 }
 
 function AdminLoginWithClerk() {
