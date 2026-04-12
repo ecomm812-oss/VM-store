@@ -7,24 +7,33 @@ import { auth } from '@clerk/nextjs/server'
 // import { put } from '@vercel/blob' // Import conditionally below
 import { analyzeImage } from '@/lib/ai-image-analysis'
 
+function hasValidClerkConfig() {
+    const publishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
+    const secret = process.env.CLERK_SECRET_KEY || ''
+
+    return publishable.startsWith('pk_') && secret.startsWith('sk_')
+}
+
 export async function POST(request) {
     try {
         // Check authentication - any logged-in user can upload
-        // In development mode with placeholder Clerk keys, bypass auth check
-        const isDevMode = process.env.NODE_ENV !== 'production' && (
-            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-            !process.env.CLERK_SECRET_KEY ||
-            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
-            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
-        )
+        // In development mode with missing/invalid Clerk keys, bypass auth check.
+        const isDevMode = process.env.NODE_ENV !== 'production' && !hasValidClerkConfig()
 
         let clerkId
         if (isDevMode) {
             console.log('Development mode: Bypassing Clerk auth for image upload')
             clerkId = 'dev_test_user_' + Date.now()
         } else {
-            const { userId } = await auth()
-            clerkId = userId
+            try {
+                const { userId } = await auth()
+                clerkId = userId
+            } catch (authError) {
+                console.warn('Clerk auth() failed during upload:', authError)
+                if (process.env.NODE_ENV !== 'production') {
+                    clerkId = 'dev_auth_fallback_' + Date.now()
+                }
+            }
 
             if (!clerkId) {
                 const clerkUser = await getCurrentUser()

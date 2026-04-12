@@ -100,7 +100,7 @@ export default function StoreAddProduct() {
             }
         } catch (error) {
             console.error('Upload error:', error)
-            toast.error('Failed to upload image. Please try again.')
+            toast.error(error?.message || 'Failed to upload image. Please try again.')
         } finally {
             setUploading(prev => {
                 const newUploading = [...prev]
