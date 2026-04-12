@@ -34,6 +34,13 @@ export default function Dashboard() {
             if (response.ok) {
                 const data = await response.json()
                 setDashboardData(data)
+            } else if (response.status === 404) {
+                // No store has been created yet for this user.
+                setDashboardData({
+                    totalProducts: 0,
+                    totalEarnings: 0,
+                    totalOrders: 0,
+                })
             } else {
                 console.error('Failed to fetch dashboard data')
                 // Fallback to dummy data if API fails

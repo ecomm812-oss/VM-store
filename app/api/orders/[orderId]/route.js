@@ -7,7 +7,7 @@ export async function GET(request, { params }) {
         const { orderId } = await params
         const clerkUser = await getCurrentUser()
 
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

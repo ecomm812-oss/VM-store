@@ -63,8 +63,15 @@ export default function StoreOrders() {
             setOrders(orders.map(o => o.id === orderId ? updatedOrder : o))
             return updatedOrder
         } else {
-            const error = await response.json()
-            throw new Error(error.error || 'Failed to update order status')
+            try {
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to update order status')
+            } catch (parseError) {
+                if (parseError.message && parseError.message.includes('Failed to update')) {
+                    throw parseError
+                }
+                throw new Error('Failed to update order status')
+            }
         }
     }
 
@@ -101,9 +108,13 @@ export default function StoreOrders() {
                 setSelectedOrder(updatedOrder)
                 toast.success('Tracking information updated!')
             } else {
-                const errorData = await response.json()
-                console.error('Tracking update error:', errorData)
-                toast.error(errorData.error || 'Failed to update tracking information')
+                try {
+                    const errorData = await response.json()
+                    console.error('Tracking update error:', errorData)
+                    toast.error(errorData.error || 'Failed to update tracking information')
+                } catch {
+                    toast.error('Failed to update tracking information')
+                }
             }
         } catch (error) {
             console.error('Tracking update exception:', error)

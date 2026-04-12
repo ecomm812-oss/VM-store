@@ -6,10 +6,53 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 
+const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').startsWith('pk_');
+
+const AuthDesktop = () => {
+    const { isSignedIn } = useUser();
+
+    return (
+        <>
+            {isSignedIn && (
+                <Link href="/orders" className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-105">
+                    My Orders
+                </Link>
+            )}
+
+            {isSignedIn ? (
+                <div className="animate-fadeIn">
+                    <UserButton />
+                </div>
+            ) : (
+                <SignInButton mode="modal">
+                    <button className="px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition-all duration-300 text-white rounded-full btn-primary hover:shadow-lg">
+                        Login
+                    </button>
+                </SignInButton>
+            )}
+        </>
+    );
+};
+
+const AuthMobile = () => {
+    const { isSignedIn } = useUser();
+
+    return isSignedIn ? (
+        <div className="animate-fadeIn">
+            <UserButton />
+        </div>
+    ) : (
+        <SignInButton mode="modal">
+            <button className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition-all duration-300 text-white rounded-full btn-primary">
+                Login
+            </button>
+        </SignInButton>
+    );
+};
+
 const Navbar = () => {
 
     const router = useRouter();
-    const { isSignedIn } = useUser();
 
     const [search, setSearch] = useState('')
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -59,22 +102,14 @@ const Navbar = () => {
                             <button className="absolute -top-1 left-3 text-[8px] text-white bg-slate-600 size-3.5 rounded-full transition-transform duration-300 group-hover:scale-125 animate-pulse-custom">{cartCount}</button>
                         </Link>
 
-                        {isSignedIn && (
-                            <Link href="/orders" className="flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-all duration-300 hover:scale-105">
-                                My Orders
-                            </Link>
-                        )}
-
-                        {isSignedIn ? (
-                            <div className="animate-fadeIn">
-                                <UserButton />
-                            </div>
+                        {isClerkConfigured ? (
+                            <AuthDesktop />
                         ) : (
-                            <SignInButton mode="modal">
+                            <Link href="/admin/login">
                                 <button className="px-8 py-2 bg-indigo-500 hover:bg-indigo-600 transition-all duration-300 text-white rounded-full btn-primary hover:shadow-lg">
                                     Login
                                 </button>
-                            </SignInButton>
+                            </Link>
                         )}
 
                     </div>
@@ -91,16 +126,14 @@ const Navbar = () => {
                         </button>
 
                         {/* Mobile User Button */}
-                        {isSignedIn ? (
-                            <div className="animate-fadeIn">
-                                <UserButton />
-                            </div>
+                        {isClerkConfigured ? (
+                            <AuthMobile />
                         ) : (
-                            <SignInButton mode="modal">
+                            <Link href="/admin/login">
                                 <button className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-sm transition-all duration-300 text-white rounded-full btn-primary">
                                     Login
                                 </button>
-                            </SignInButton>
+                            </Link>
                         )}
                     </div>
                 </div>
@@ -176,14 +209,8 @@ const Navbar = () => {
                                 </Link>
 
                                 {/* Mobile My Orders Link */}
-                                {isSignedIn && (
-                                    <Link
-                                        href="/orders"
-                                        onClick={closeMobileMenu}
-                                        className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
-                                    >
-                                        My Orders
-                                    </Link>
+                                {isClerkConfigured && (
+                                    <AuthMobileOrders onClose={closeMobileMenu} />
                                 )}
                             </div>
                         </div>
@@ -195,5 +222,21 @@ const Navbar = () => {
         </nav>
     )
 }
+
+const AuthMobileOrders = ({ onClose }) => {
+    const { isSignedIn } = useUser();
+
+    if (!isSignedIn) return null;
+
+    return (
+        <Link
+            href="/orders"
+            onClick={onClose}
+            className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
+        >
+            My Orders
+        </Link>
+    );
+};
 
 export default Navbar

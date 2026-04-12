@@ -9,7 +9,7 @@ export async function PUT(request) {
         console.log('Cancel order API called');
 
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             console.log('No clerk user found');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }

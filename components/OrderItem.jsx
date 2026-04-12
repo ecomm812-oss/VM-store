@@ -40,8 +40,12 @@ const OrderItem = ({ order }) => {
                 // Refresh the page to show updated status
                 window.location.reload();
             } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to cancel order');
+                try {
+                    const error = await response.json();
+                    toast.error(error.error || 'Failed to cancel order');
+                } catch {
+                    toast.error('Failed to cancel order');
+                }
             }
         } catch (error) {
             toast.error('Failed to cancel order');

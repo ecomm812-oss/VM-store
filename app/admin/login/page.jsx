@@ -5,7 +5,26 @@ import { useUser } from '@clerk/nextjs'
 import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading'
 
+const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').startsWith('pk_')
+
 export default function AdminLoginPage() {
+  if (!isClerkConfigured) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+        <div className="w-full max-w-xl bg-amber-50 border border-amber-200 rounded-lg p-6 text-amber-900">
+          <h1 className="text-2xl font-semibold mb-2">Admin login unavailable</h1>
+          <p>
+            Clerk is not configured in this environment. Add valid Clerk keys in .env.local and restart the dev server.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return <AdminLoginWithClerk />
+}
+
+function AdminLoginWithClerk() {
   const router = useRouter()
   const { isSignedIn, user, isLoaded } = useUser()
   const [accessDenied, setAccessDenied] = useState(false)

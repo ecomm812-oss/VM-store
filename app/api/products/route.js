@@ -1,6 +1,55 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
+import { productDummyData } from '@/assets/assets'
+
+const isDevelopment = process.env.NODE_ENV !== 'production'
+
+function toImageSrc(value) {
+    if (typeof value === 'string') return value
+    if (value && typeof value === 'object') {
+        if (typeof value.src === 'string') return value.src
+        if (typeof value.default === 'string') return value.default
+        if (value.default && typeof value.default.src === 'string') return value.default.src
+    }
+    return null
+}
+
+function normalizeFallbackProducts(products, search, category) {
+    return products
+        .map(product => ({
+            ...product,
+            images: Array.isArray(product.images) ? product.images.map(toImageSrc).filter(Boolean) : [],
+            store: product.store ? {
+                ...product.store,
+                logo: toImageSrc(product.store.logo),
+                user: product.store.user ? {
+                    ...product.store.user,
+                    image: toImageSrc(product.store.user.image)
+                } : null
+            } : null,
+            rating: Array.isArray(product.rating)
+                ? product.rating.map(entry => ({
+                    ...entry,
+                    user: entry.user ? {
+                        ...entry.user,
+                        image: toImageSrc(entry.user.image)
+                    } : null
+                }))
+                : []
+        }))
+        .filter(product => product.images.length > 0)
+        .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
+        .filter(product => !category || product.category === category)
+}
+
+function shouldUseFallback(error) {
+    return isDevelopment && (
+        error?.code === 'ECONNREFUSED' ||
+        error?.message?.includes?.('ECONNREFUSED') ||
+        error?.message?.includes?.('Can\'t reach database server')
+    )
+}
 
 export async function GET(request) {
     try {
@@ -79,6 +128,15 @@ export async function GET(request) {
 
         return NextResponse.json(validProducts)
     } catch (error) {
+        const { searchParams } = new URL(request.url)
+        const search = searchParams.get('search')
+        const category = searchParams.get('category')
+
+        if (shouldUseFallback(error)) {
+            console.warn('[API] Database unavailable in development, serving fallback products')
+            return NextResponse.json(normalizeFallbackProducts(productDummyData, search, category))
+        }
+
         console.error('[API] Error fetching products:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
@@ -87,7 +145,7 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

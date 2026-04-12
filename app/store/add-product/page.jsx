@@ -88,8 +88,15 @@ export default function StoreAddProduct() {
 
                 toast.success('Image uploaded successfully!')
             } else {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Upload failed')
+                try {
+                    const errorData = await response.json()
+                    throw new Error(errorData.error || 'Upload failed')
+                } catch (parseError) {
+                    if (parseError.message && parseError.message.includes('Upload failed')) {
+                        throw parseError
+                    }
+                    throw new Error('Upload failed')
+                }
             }
         } catch (error) {
             console.error('Upload error:', error)

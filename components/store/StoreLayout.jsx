@@ -17,9 +17,14 @@ const StoreLayout = ({ children }) => {
         try {
             const response = await fetch('/api/store/info')
             if (response.ok) {
-                const storeData = await response.json()
-                setStoreInfo(storeData)
-                setIsSeller(true)
+                try {
+                    const storeData = await response.json()
+                    setStoreInfo(storeData)
+                    setIsSeller(true)
+                } catch (parseError) {
+                    console.error('Failed to parse store info response:', parseError)
+                    setIsSeller(false)
+                }
             } else {
                 setIsSeller(false)
             }

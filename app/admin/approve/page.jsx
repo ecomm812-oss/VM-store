@@ -30,6 +30,7 @@ export default function AdminApprove() {
 
     const handleApprove = async ({ storeId, status }) => {
         try {
+            const action = status === 'approved' ? 'approve' : 'reject'
             const response = await fetch('/api/admin/approve', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,7 +42,8 @@ export default function AdminApprove() {
                 setStores(stores.filter(store => store.id !== storeId))
                 return `Store ${status} successfully`
             } else {
-                throw new Error(`Failed to ${status} store`)
+                const errorData = await response.json().catch(() => ({}))
+                throw new Error(errorData.error || `Failed to ${action} store`)
             }
         } catch (error) {
             console.error(`Error ${status}ing store:`, error)

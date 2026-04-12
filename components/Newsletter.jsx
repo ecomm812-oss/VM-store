@@ -33,12 +33,16 @@ const Newsletter = () => {
         body: JSON.stringify({ email: trimmedEmail }),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        setMessage(data.error || 'Failed to subscribe. Please try again.')
+        try {
+          const error = await response.json()
+          setMessage(error.error || 'Failed to subscribe. Please try again.')
+        } catch {
+          setMessage('Failed to subscribe. Please try again.')
+        }
         setStatus('error')
       } else {
+        const data = await response.json()
         setMessage(data.message || 'Thanks for subscribing!')
         setStatus('success')
         setEmail('')
@@ -68,6 +72,7 @@ const Newsletter = () => {
             onChange={(e) => setEmail(e.target.value)}
             aria-label='Newsletter email'
             required
+            suppressHydrationWarning
           />
           <button
             type='submit'

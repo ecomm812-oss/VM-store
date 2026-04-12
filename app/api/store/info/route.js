@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { getCurrentUser } from '@/lib/security'
+import { getDevStoreByClerkId, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
 
 async function resolveClerkId() {
     try {
@@ -16,6 +17,10 @@ async function resolveClerkId() {
 }
 
 async function resolveUserForStoreInfo(clerkId) {
+    if (!clerkId) {
+        throw new Error('Missing clerkId for user lookup')
+    }
+
     let user = await prisma.user.findUnique({ where: { clerkId } })
     if (user) return user
 
@@ -81,6 +86,20 @@ export async function GET() {
         console.log('Store found:', { id: store.id, name: store.name })
         return NextResponse.json(store)
     } catch (error) {
+        if (shouldUseDevStoreFallback(error)) {
+            const clerkId = await resolveClerkId()
+            if (!clerkId) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+
+            const store = await getDevStoreByClerkId(clerkId)
+            if (!store) {
+                return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+            }
+
+            return NextResponse.json(store)
+        }
+
         console.error('Store info error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

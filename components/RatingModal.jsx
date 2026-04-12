@@ -38,8 +38,12 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                 // Optionally refresh the page to show the new rating
                 window.location.reload();
             } else {
-                const error = await response.json();
-                toast.error(error.error || 'Failed to submit rating');
+                try {
+                    const error = await response.json();
+                    toast.error(error.error || 'Failed to submit rating');
+                } catch {
+                    toast.error('Failed to submit rating');
+                }
             }
         } catch (error) {
             toast.error('Failed to submit rating');

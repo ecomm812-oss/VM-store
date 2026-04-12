@@ -6,7 +6,7 @@ import { sendLoginNotification } from '@/lib/email'
 export async function GET() {
   try {
     const clerkUser = await getCurrentUser()
-    if (!clerkUser) {
+    if (!clerkUser?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

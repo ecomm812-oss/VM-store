@@ -46,8 +46,15 @@ const AddressModal = ({ setShowAddressModal }) => {
                 toast.success('Address added successfully!')
                 setShowAddressModal(false)
             } else {
-                const error = await response.json()
-                throw new Error(error.error || 'Failed to add address')
+                try {
+                    const error = await response.json()
+                    throw new Error(error.error || 'Failed to add address')
+                } catch (parseError) {
+                    if (parseError.message && parseError.message.includes('Failed to add')) {
+                        throw parseError
+                    }
+                    throw new Error('Failed to add address')
+                }
             }
         } catch (error) {
             toast.error(error.message || 'Failed to add address')

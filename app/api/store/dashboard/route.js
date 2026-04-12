@@ -1,11 +1,18 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
+import { getDevStoreByClerkId, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
+
+const emptyDashboard = {
+    totalProducts: 0,
+    totalOrders: 0,
+    totalEarnings: 0
+}
 
 export async function GET() {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -34,19 +41,14 @@ export async function GET() {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
-        // Get total products for this store
         const totalProducts = await prisma.product.count({
             where: { storeId: store.id }
         })
 
-        // Get total orders for this store
         const totalOrders = await prisma.order.count({
             where: { storeId: store.id }
         })
 
-        // Get total earnings from paid orders
-        // For Razorpay: count orders where isPaid = true
-        // For COD: count orders where status = 'DELIVERED' (payment received on delivery)
         const razorpayEarnings = await prisma.order.aggregate({
             _sum: {
                 total: true
@@ -77,6 +79,16 @@ export async function GET() {
             totalEarnings
         })
     } catch (error) {
+        if (shouldUseDevStoreFallback(error)) {
+            const clerkUser = await getCurrentUser()
+            if (!clerkUser?.id) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            }
+
+            await getDevStoreByClerkId(clerkUser.id)
+            return NextResponse.json(emptyDashboard)
+        }
+
         console.error('Store dashboard error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }

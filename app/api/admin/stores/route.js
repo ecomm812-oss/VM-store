@@ -73,7 +73,7 @@ export async function POST(request) {
         } else {
             clerkUser = await getCurrentUser()
             
-            if (!clerkUser) {
+            if (!clerkUser?.id) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
             }
             clerkId = clerkUser.id

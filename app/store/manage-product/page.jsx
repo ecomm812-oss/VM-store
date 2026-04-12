@@ -52,8 +52,15 @@ export default function StoreManageProducts() {
             setProducts(products.map(p => p.id === productId ? updatedProduct : p))
             return updatedProduct
         } else {
-            const error = await response.json()
-            throw new Error(error.error || 'Failed to update product stock')
+            try {
+                const error = await response.json()
+                throw new Error(error.error || 'Failed to update product stock')
+            } catch (parseError) {
+                if (parseError.message && parseError.message.includes('Failed to update')) {
+                    throw parseError
+                }
+                throw new Error('Failed to update product stock')
+            }
         }
     }
 

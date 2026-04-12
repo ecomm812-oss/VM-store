@@ -5,7 +5,7 @@ import { getCurrentUser } from '@/lib/security'
 export async function GET(request) {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -66,7 +66,7 @@ export async function GET(request) {
 export async function PUT(request) {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

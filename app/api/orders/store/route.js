@@ -6,7 +6,7 @@ import { sendOrderStatusNotification } from '@/lib/email'
 export async function GET() {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
@@ -60,7 +60,7 @@ export async function GET() {
 export async function PUT(request) {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

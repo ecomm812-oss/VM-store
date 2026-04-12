@@ -5,7 +5,7 @@ import { getCurrentUser, sanitizeInput, createSecureErrorResponse } from '@/lib/
 export async function POST(request) {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return createSecureErrorResponse('address creation', 401)
         }
 
@@ -100,7 +100,7 @@ export async function POST(request) {
 export async function GET() {
     try {
         const clerkUser = await getCurrentUser()
-        if (!clerkUser) {
+        if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 

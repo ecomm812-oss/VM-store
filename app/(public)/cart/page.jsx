@@ -8,6 +8,8 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
+const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').startsWith('pk_');
+
 export default function Cart() {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
@@ -95,7 +97,16 @@ export default function Cart() {
                             }
                         </tbody>
                     </table>
-                    <OrderSummary totalPrice={totalPrice} items={cartArray} />
+                    {isClerkConfigured ? (
+                        <OrderSummary totalPrice={totalPrice} items={cartArray} />
+                    ) : (
+                        <div className="w-full max-w-lg lg:max-w-85 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-7">
+                            <h2 className="text-xl font-medium text-amber-900">Checkout unavailable</h2>
+                            <p className="mt-3">
+                                Authentication is not configured for this environment. Add valid Clerk keys in .env.local to enable checkout.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

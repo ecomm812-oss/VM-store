@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { getCurrentUser } from '@/lib/security'
+import { createDevStore, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
 
 async function resolveClerkId() {
   try {
@@ -16,6 +17,10 @@ async function resolveClerkId() {
 }
 
 async function resolveUserForStore(clerkId, fallbackEmail) {
+  if (!clerkId) {
+    throw new Error('Missing clerkId for user lookup')
+  }
+
   let user = await prisma.user.findUnique({ where: { clerkId } })
   if (user) return user
 
@@ -57,13 +62,15 @@ async function resolveUserForStore(clerkId, fallbackEmail) {
 }
 
 export async function POST(request) {
+  let body = null
+
   try {
     const clerkId = await resolveClerkId()
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    body = await request.json()
     const name = body?.name?.trim()
     const username = body?.username?.trim()?.toLowerCase()
     const description = body?.description?.trim() || ''
@@ -108,6 +115,31 @@ export async function POST(request) {
     return NextResponse.json(store, { status: 201 })
   } catch (error) {
     console.error('Store creation error:', error)
+
+    if (shouldUseDevStoreFallback(error)) {
+      const clerkId = await resolveClerkId()
+      if (!clerkId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      try {
+        const store = await createDevStore({
+          clerkId,
+          name: body?.name?.trim(),
+          username: body?.username?.trim() || '',
+          description: body?.description?.trim() || '',
+          email: body?.email?.trim()?.toLowerCase() || '',
+          contact: body?.contact?.trim() || '',
+          address: body?.address?.trim() || '',
+          logo: body?.logo
+        })
+
+        return NextResponse.json(store, { status: 201 })
+      } catch (fallbackError) {
+        const statusCode = fallbackError?.statusCode || 500
+        return NextResponse.json({ error: fallbackError.message || 'Failed to create store' }, { status: statusCode })
+      }
+    }
 
     if (error.code === 'P2002') {
       const target = Array.isArray(error?.meta?.target) ? error.meta.target.join(',') : ''
