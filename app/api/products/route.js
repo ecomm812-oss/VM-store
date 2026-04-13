@@ -6,6 +6,20 @@ import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallba
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+const LIST_CACHE_HEADERS = {
+    'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
+}
+
+function listJsonResponse(payload, init = {}) {
+    return NextResponse.json(payload, {
+        ...init,
+        headers: {
+            ...(init.headers || {}),
+            ...LIST_CACHE_HEADERS
+        }
+    })
+}
+
 function normalizeStringArrayInput(value) {
     if (Array.isArray(value)) {
         return value
@@ -165,7 +179,11 @@ export async function GET(request) {
                 return NextResponse.json({ error: 'Product not found' }, { status: 404 })
             }
 
-            return NextResponse.json(normalizeProductResponse(product))
+            return NextResponse.json(normalizeProductResponse(product), {
+                headers: {
+                    'Cache-Control': 'private, no-store'
+                }
+            })
         }
 
         let products
@@ -282,7 +300,7 @@ export async function GET(request) {
             console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
         }
 
-        return NextResponse.json(validProducts)
+        return listJsonResponse(validProducts)
     } catch (error) {
         const { searchParams } = new URL(request.url)
         const search = searchParams.get('search')
@@ -295,7 +313,7 @@ export async function GET(request) {
                 getPublicDevProducts({ search: search || '', category: category || '' })
             ])
 
-            return NextResponse.json([...devProducts, ...dummyProducts])
+            return listJsonResponse([...devProducts, ...dummyProducts])
         }
 
         console.error('[API] Error fetching products:', error)
