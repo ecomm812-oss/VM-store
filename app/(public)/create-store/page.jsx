@@ -6,6 +6,7 @@ import toast from "react-hot-toast"
 import Loading from "@/components/Loading"
 import { useRouter } from "next/navigation"
 import { useUser } from "@clerk/nextjs"
+import { uploadImageFile, validateImageFile } from "@/lib/upload-client"
 
 const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').startsWith('pk_')
 
@@ -40,6 +41,12 @@ function CreateStoreWithClerk() {
     const handleLogoChange = async (e) => {
         const file = e.target.files[0]
         if (file) {
+            const validationError = validateImageFile(file)
+            if (validationError) {
+                toast.error(validationError)
+                return
+            }
+
             // Create preview URL
             const previewUrl = URL.createObjectURL(file)
             setStoreInfo({ ...storeInfo, logo: file, logoPreview: previewUrl })
@@ -101,38 +108,10 @@ function CreateStoreWithClerk() {
 
             // Upload logo if selected
             if (storeInfo.logo) {
-                const formData = new FormData()
-                formData.append('file', storeInfo.logo)
-
                 try {
-                    const uploadResponse = await fetch('/api/upload/image', {
-                        method: 'POST',
-                        body: formData,
-                        credentials: 'same-origin'
-                    })
-
-                    if (uploadResponse.ok) {
-                        const uploadData = await uploadResponse.json()
-                        logoUrl = uploadData.url
-                        console.log('Logo uploaded successfully:', logoUrl)
-                    } else {
-                        const errorData = await uploadResponse.json().catch(() => ({}))
-                        
-                        // Provide user-friendly error messages based on status code
-                        let errorMessage
-                        if (uploadResponse.status === 413) {
-                            errorMessage = 'File is too large. Maximum file size is 5MB.'
-                        } else if (uploadResponse.status === 400) {
-                            errorMessage = errorData.error || 'Invalid file. Please use JPG, PNG, GIF, or WebP format.'
-                        } else if (uploadResponse.status === 401) {
-                            errorMessage = errorData.error || 'Your session is no longer valid. Please sign in again.'
-                        } else {
-                            errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
-                        }
-                        
-                        console.error('Logo upload error:', errorMessage, errorData)
-                        throw new Error(`Upload failed: ${errorMessage}`)
-                    }
+                    const uploadData = await uploadImageFile(storeInfo.logo)
+                    logoUrl = uploadData.url
+                    console.log('Logo uploaded successfully:', logoUrl)
                 } catch (uploadError) {
                     console.error('Logo upload network error:', uploadError)
                     throw new Error(uploadError?.message || 'Network error: Failed to upload logo. Check your connection and try again.')
@@ -267,6 +246,12 @@ function CreateStoreDevMode() {
     const handleLogoChange = async (e) => {
         const file = e.target.files[0]
         if (file) {
+            const validationError = validateImageFile(file)
+            if (validationError) {
+                toast.error(validationError)
+                return
+            }
+
             const previewUrl = URL.createObjectURL(file)
             setStoreInfo({ ...storeInfo, logo: file, logoPreview: previewUrl })
         }
@@ -311,21 +296,7 @@ function CreateStoreDevMode() {
             let logoUrl = 'https://via.placeholder.com/200'
 
             if (storeInfo.logo) {
-                const formData = new FormData()
-                formData.append('file', storeInfo.logo)
-
-                const uploadResponse = await fetch('/api/upload/image', {
-                    method: 'POST',
-                    body: formData,
-                    credentials: 'same-origin'
-                })
-
-                if (!uploadResponse.ok) {
-                    const errorData = await uploadResponse.json().catch(() => ({}))
-                    throw new Error(errorData.error || errorData.details || 'Failed to upload logo')
-                }
-
-                const uploadData = await uploadResponse.json()
+                const uploadData = await uploadImageFile(storeInfo.logo)
                 logoUrl = uploadData.url
             }
 

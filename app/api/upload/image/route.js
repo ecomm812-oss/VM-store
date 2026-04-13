@@ -80,47 +80,36 @@ export async function POST(request) {
         const fileName = `${randomUUID()}.${ext}`
 
         let imageUrl
-        const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV
-        console.log('Environment check:', { NODE_ENV: process.env.NODE_ENV, VERCEL: process.env.VERCEL, isVercel })
+        const useBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+        console.log('Storage check:', {
+            NODE_ENV: process.env.NODE_ENV,
+            VERCEL: process.env.VERCEL,
+            VERCEL_ENV: process.env.VERCEL_ENV,
+            useBlobStorage
+        })
 
-        if (isVercel) {
-            if (!process.env.BLOB_READ_WRITE_TOKEN) {
-                if (process.env.NODE_ENV !== 'production') {
-                    console.warn('Blob token missing; falling back to local storage in non-production mode')
-                    imageUrl = await saveFileLocally(buffer, fileName)
-                    console.log('Local file saved:', imageUrl)
-                } else {
-                    console.error('Blob storage is not configured for this production deployment')
-                    return NextResponse.json({
-                        error: 'Image storage is not configured on the server.',
-                        details: 'Set BLOB_READ_WRITE_TOKEN in your Vercel project environment variables.'
-                    }, { status: 500 })
-                }
-            }
+        if (useBlobStorage) {
+            console.log('Using Vercel Blob storage')
+            try {
+                const { put } = await import('@vercel/blob')
 
-            if (!imageUrl) {
-                console.log('Using Vercel Blob storage')
-                try {
-                    const { put } = await import('@vercel/blob')
+                const blob = await put(fileName, buffer, {
+                    access: 'public',
+                    contentType: file.type
+                })
 
-                    const blob = await put(fileName, buffer, {
-                        access: 'public',
-                        contentType: file.type
-                    })
+                imageUrl = blob.url
+                console.log('Blob upload successful:', imageUrl)
+            } catch (blobError) {
+                console.error('Blob upload failed:', blobError)
 
-                    imageUrl = blob.url
-                    console.log('Blob upload successful:', imageUrl)
-                } catch (blobError) {
-                    console.error('Blob upload failed:', blobError)
-
-                    return NextResponse.json({
-                        error: 'Image storage upload failed.',
-                        details: 'The server could not store the uploaded image in blob storage.'
-                    }, { status: 500 })
-                }
+                return NextResponse.json({
+                    error: 'Image storage upload failed.',
+                    details: 'The server could not store the uploaded image in blob storage.'
+                }, { status: 500 })
             }
         } else {
-            console.log('Using local file storage (development mode)')
+            console.log('Using local file storage')
             imageUrl = await saveFileLocally(buffer, fileName)
             console.log('Local file saved:', imageUrl)
         }

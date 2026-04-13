@@ -2,6 +2,7 @@
 import { useState, useRef } from "react"
 import { toast } from "react-hot-toast"
 import { UploadIcon, XIcon } from "lucide-react"
+import { uploadImageFile, validateImageFile } from "@/lib/upload-client"
 
 export default function StoreAddProduct() {
 
@@ -36,15 +37,9 @@ export default function StoreAddProduct() {
     const handleFileUpload = async (index, file) => {
         if (!file) return
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            toast.error('Please select an image file')
-            return
-        }
-
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('File size must be less than 5MB')
+        const validationError = validateImageFile(file)
+        if (validationError) {
+            toast.error(validationError)
             return
         }
 
@@ -55,52 +50,27 @@ export default function StoreAddProduct() {
         })
 
         try {
-            // Create FormData for file upload
-            const formData = new FormData()
-            formData.append('file', file)
+            const data = await uploadImageFile(file)
+            const newImages = [...images]
+            newImages[index] = data.url
+            setImages(newImages)
 
-            // Upload to our API endpoint
-            const response = await fetch('/api/upload/image', {
-                method: 'POST',
-                body: formData
-            })
+            const newUploadedFiles = [...uploadedFiles]
+            newUploadedFiles[index] = data.url
+            setUploadedFiles(newUploadedFiles)
 
-            if (response.ok) {
-                const data = await response.json()
-                const newImages = [...images]
-                newImages[index] = data.url
-                setImages(newImages)
-
-                const newUploadedFiles = [...uploadedFiles]
-                newUploadedFiles[index] = data.url
-                setUploadedFiles(newUploadedFiles)
-
-                if (data.ai?.description) {
-                    setAiGeneratedDescription(data.ai.description)
-                    // Auto-fill description with AI-generated text on first upload
-                    if (!productInfo.description.trim()) {
-                        setProductInfo(prev => ({
-                            ...prev,
-                            description: data.ai.description
-                        }))
-                    }
+            if (data.ai?.description) {
+                setAiGeneratedDescription(data.ai.description)
+                // Auto-fill description with AI-generated text on first upload
+                if (!productInfo.description.trim()) {
+                    setProductInfo(prev => ({
+                        ...prev,
+                        description: data.ai.description
+                    }))
                 }
-
-                toast.success('Image uploaded successfully!')
-            } else {
-                const errorData = await response.json().catch(() => ({}))
-
-                let errorMessage = errorData.error || errorData.details || 'Upload failed'
-                if (response.status === 401) {
-                    errorMessage = errorData.error || 'Please sign in again to upload images.'
-                } else if (response.status === 413) {
-                    errorMessage = errorData.error || 'File is too large. Maximum file size is 5MB.'
-                } else if (response.status === 400) {
-                    errorMessage = errorData.error || 'Invalid image. Please use JPG, PNG, GIF, or WebP.'
-                }
-
-                throw new Error(errorMessage)
             }
+
+            toast.success('Image uploaded successfully!')
         } catch (error) {
             console.error('Upload error:', error)
             toast.error(error?.message || 'Failed to upload image. Please try again.')
