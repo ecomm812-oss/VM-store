@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord, shouldUseDatabaseFallback } from '@/lib/security'
 import Razorpay from 'razorpay'
 import { checkRateLimit } from '@/lib/rateLimit'
 
@@ -20,21 +20,13 @@ export async function POST(request) {
             }, { status: 429 })
         }
 
-        // Find the user in our database, or create if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'User'
         })
 
         if (!user) {
-            // Create user if they don't exist
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
-                    email: clerkUser.emailAddresses[0].emailAddress,
-                    image: clerkUser.imageUrl
-                }
-            })
+            return NextResponse.json({ error: 'Authentication required.', code: 401 }, { status: 401 })
         }
 
         const { total, storeId, addressId, paymentMethod, orderItems, isCouponUsed, coupon } = await request.json()
@@ -176,6 +168,10 @@ export async function POST(request) {
 
         return NextResponse.json({ order, razorpayOrder })
     } catch (error) {
+        if (shouldUseDatabaseFallback(error)) {
+            return NextResponse.json([])
+        }
+
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
@@ -187,19 +183,13 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'User'
         })
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const orders = await prisma.order.findMany({
@@ -232,19 +222,13 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'User'
         })
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const { orderId, isPaid, razorpayPaymentId, razorpayOrderId, razorpaySignature } = await request.json()

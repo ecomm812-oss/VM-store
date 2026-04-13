@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { productDummyData } from '@/assets/assets'
 import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
 
@@ -165,21 +165,13 @@ export async function POST(request) {
 
         body = await request.json()
 
-        // Find the user in our database, or create if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'Store Owner'
         })
 
         if (!user) {
-            // Create user if they don't exist
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
-                    email: clerkUser.emailAddresses[0].emailAddress,
-                    image: clerkUser.imageUrl
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const store = await prisma.store.findUnique({

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { toast } from "react-hot-toast"
 import Image from "next/image"
 import Loading from "@/components/Loading"
+import Link from "next/link"
 
 export default function StoreManageProducts() {
 
@@ -10,6 +11,7 @@ export default function StoreManageProducts() {
 
     const [loading, setLoading] = useState(true)
     const [products, setProducts] = useState([])
+    const [errorMessage, setErrorMessage] = useState('')
 
     const fetchProducts = async () => {
         try {
@@ -19,14 +21,25 @@ export default function StoreManageProducts() {
                     'Content-Type': 'application/json',
                 }
             })
+
+            const data = await response.json().catch(() => null)
+
             if (response.ok) {
-                const data = await response.json()
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid products response received from the server')
+                }
+
                 setProducts(data)
+                setErrorMessage('')
             } else {
-                toast.error('Failed to fetch products')
+                const message = data?.error || data?.details || 'Failed to fetch products'
+                setErrorMessage(message)
+                toast.error(message)
             }
         } catch (error) {
-            toast.error('Failed to fetch products')
+            const message = error?.message || 'Failed to fetch products'
+            setErrorMessage(message)
+            toast.error(message)
         } finally {
             setLoading(false)
         }
@@ -69,6 +82,33 @@ export default function StoreManageProducts() {
     }, [])
 
     if (loading) return <Loading />
+
+    if (errorMessage) {
+        return (
+            <div className="max-w-4xl">
+                <h1 className="text-2xl text-slate-500 mb-5">Manage <span className="text-slate-800 font-medium">Products</span></h1>
+                <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+                    <p className="font-medium">Unable to load your products.</p>
+                    <p className="mt-2 text-sm">{errorMessage}</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (products.length === 0) {
+        return (
+            <div className="max-w-4xl">
+                <h1 className="text-2xl text-slate-500 mb-5">Manage <span className="text-slate-800 font-medium">Products</span></h1>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-8 text-slate-600">
+                    <p className="text-lg font-medium text-slate-800">No products found yet.</p>
+                    <p className="mt-2 text-sm">Add your first product to make it appear in your store and public catalog.</p>
+                    <Link href="/store/add-product" className="inline-flex mt-5 rounded-lg bg-slate-800 px-5 py-2 text-sm font-medium text-white hover:bg-slate-900 transition">
+                        Add New Product
+                    </Link>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <>

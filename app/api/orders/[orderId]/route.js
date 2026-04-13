@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 
 export async function GET(request, { params }) {
     try {
@@ -11,19 +11,13 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'User'
         })
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         // Fetch the specific order with all related data

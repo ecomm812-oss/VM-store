@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord, shouldUseDatabaseFallback } from '@/lib/security'
 import { sendOrderStatusNotification } from '@/lib/email'
 
 export async function GET() {
@@ -10,19 +10,13 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'Store Owner'
         })
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const store = await prisma.store.findUnique({
@@ -53,6 +47,10 @@ export async function GET() {
 
         return NextResponse.json(validOrders)
     } catch (error) {
+        if (shouldUseDatabaseFallback(error)) {
+            return NextResponse.json([])
+        }
+
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
@@ -64,19 +62,13 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'Store Owner'
         })
 
         if (!user) {
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const store = await prisma.store.findUnique({

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord, getUserDisplayName, getUserPrimaryEmail, shouldUseDatabaseFallback } from '@/lib/security'
 import { sendLoginNotification } from '@/lib/email'
 
 export async function GET() {
@@ -10,19 +9,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    let user = await prisma.user.findUnique({
-      where: { clerkId: clerkUser.id }
+    const user = await getOrCreateUserRecord({
+      clerkId: clerkUser.id,
+      fallbackName: 'User'
     })
 
     if (!user) {
-      user = await prisma.user.create({
-        data: {
-          clerkId: clerkUser.id,
-          name: `${clerkUser.firstName} ${clerkUser.lastName}`.trim(),
-          email: clerkUser.emailAddresses?.[0]?.emailAddress || '',
-          image: clerkUser.imageUrl || ''
-        }
-      })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Notify admins when a user logs in (requires ADMIN_EMAILS + SENDGRID_API_KEY)
@@ -34,6 +27,21 @@ export async function GET() {
 
     return NextResponse.json(user)
   } catch (error) {
+    if (shouldUseDatabaseFallback(error)) {
+      const clerkUser = await getCurrentUser()
+      if (!clerkUser?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
+
+      return NextResponse.json({
+        id: `dev-${clerkUser.id}`,
+        clerkId: clerkUser.id,
+        name: getUserDisplayName(clerkUser, 'User'),
+        email: getUserPrimaryEmail(clerkUser, '', clerkUser.id),
+        image: clerkUser.imageUrl || ''
+      })
+    }
+
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { OrderStatus } from '@prisma/client'
 import { sendOrderStatusNotification } from '@/lib/email'
 
@@ -16,20 +16,14 @@ export async function PUT(request) {
 
         console.log('Clerk user:', clerkUser.id);
 
-        // Auto-create user if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
+        const user = await getOrCreateUserRecord({
+            clerkId: clerkUser.id,
+            fallbackName: 'User'
         })
 
         if (!user) {
-            console.log('Creating new user');
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    email: clerkUser.emailAddresses[0]?.emailAddress || '',
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName || '',
-                }
-            })
+            console.log('User could not be resolved');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         console.log('User found/created:', user.id);
