@@ -114,6 +114,13 @@ function shouldUseFallback(error) {
     )
 }
 
+function isProductColumnTypeMismatch(error) {
+    const message = error?.message || ''
+    return message.includes("Expected a string in column 'images', got object") ||
+        message.includes("Expected a string in column 'sizes', got object") ||
+        message.includes('malformed array literal')
+}
+
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url)
@@ -131,28 +138,102 @@ export async function GET(request) {
             where.category = category
         }
 
-        const products = await prisma.product.findMany({
-            where: {
-                ...where,
-                inStock: true
-            },
-            include: {
-                store: true,
-                rating: {
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                image: true
+        let products
+        try {
+            products = await prisma.product.findMany({
+                where: {
+                    ...where,
+                    inStock: true
+                },
+                include: {
+                    store: true,
+                    rating: {
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    image: true
+                                }
                             }
+                        },
+                        orderBy: {
+                            createdAt: 'desc'
                         }
-                    },
-                    orderBy: {
-                        createdAt: 'desc'
                     }
                 }
+            })
+        } catch (queryError) {
+            if (!isProductColumnTypeMismatch(queryError)) {
+                throw queryError
             }
-        })
+
+            const rawProducts = await prisma.$queryRaw`
+                SELECT
+                    p."id",
+                    p."name",
+                    p."description",
+                    p."mrp",
+                    p."price",
+                    p."images",
+                    p."sizes",
+                    p."category",
+                    p."inStock",
+                    p."storeId",
+                    p."createdAt",
+                    p."updatedAt",
+                    s."id" AS "store__id",
+                    s."name" AS "store__name",
+                    s."description" AS "store__description",
+                    s."username" AS "store__username",
+                    s."address" AS "store__address",
+                    s."status" AS "store__status",
+                    s."isActive" AS "store__isActive",
+                    s."logo" AS "store__logo",
+                    s."email" AS "store__email",
+                    s."contact" AS "store__contact",
+                    s."userId" AS "store__userId",
+                    s."createdAt" AS "store__createdAt",
+                    s."updatedAt" AS "store__updatedAt"
+                FROM "Product" p
+                LEFT JOIN "Store" s ON s."id" = p."storeId"
+                WHERE p."inStock" = true
+                ORDER BY p."createdAt" DESC
+            `
+
+            products = rawProducts
+                .map((product) => ({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    mrp: product.mrp,
+                    price: product.price,
+                    images: product.images,
+                    sizes: product.sizes,
+                    category: product.category,
+                    inStock: product.inStock,
+                    storeId: product.storeId,
+                    createdAt: product.createdAt,
+                    updatedAt: product.updatedAt,
+                    store: product.store__id ? {
+                        id: product.store__id,
+                        name: product.store__name,
+                        description: product.store__description,
+                        username: product.store__username,
+                        address: product.store__address,
+                        status: product.store__status,
+                        isActive: product.store__isActive,
+                        logo: product.store__logo,
+                        email: product.store__email,
+                        contact: product.store__contact,
+                        userId: product.store__userId,
+                        createdAt: product.store__createdAt,
+                        updatedAt: product.store__updatedAt
+                    } : null,
+                    rating: []
+                }))
+                .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
+                .filter(product => !category || product.category === category)
+        }
 
         // Parse JSON fields safely and normalize legacy image shapes.
         const validProducts = products
