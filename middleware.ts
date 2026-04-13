@@ -1,29 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { clerkMiddleware } from '@clerk/nextjs/server'
+import { NextFetchEvent, NextRequest, NextResponse } from 'next/server'
 
-const isPublicRoute = (pathname: string): boolean => {
-  const publicPatterns = [
-    /^\/(?!admin|store)(.*)/,
-    /^\/admin\/login/,
-    /^\/(api|trpc)(.*)/,
-  ]
-  return publicPatterns.some(pattern => pattern.test(pathname))
+function hasValidClerkConfig() {
+  const publishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
+  const secret = process.env.CLERK_SECRET_KEY || ''
+
+  return publishable.startsWith('pk_') && secret.startsWith('sk_')
 }
 
-export function middleware(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  
-  // Allow all public routes (including API)
-  if (isPublicRoute(pathname)) {
+const clerkHandler = clerkMiddleware(() => NextResponse.next())
+
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  if (!hasValidClerkConfig()) {
     return NextResponse.next()
   }
-  
-  // In development, skip auth check for localhost
-  if (process.env.NODE_ENV !== 'production') {
-    return NextResponse.next()
-  }
-  
-  // In production, you would implement proper Clerk auth checks here
-  return NextResponse.next()
+
+  return clerkHandler(request, event)
 }
 
 export const config = {

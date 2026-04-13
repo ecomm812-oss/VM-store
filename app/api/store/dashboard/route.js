@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/security'
+import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { getDevStoreByClerkId, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
 
 const emptyDashboard = {
@@ -11,26 +11,9 @@ const emptyDashboard = {
 
 export async function GET() {
     try {
-        const clerkUser = await getCurrentUser()
-        if (!clerkUser?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-        }
-
-        // Find the user in our database, or create if not exists
-        let user = await prisma.user.findUnique({
-            where: { clerkId: clerkUser.id }
-        })
-
+        const user = await getOrCreateUserRecord({ fallbackName: 'Store Owner' })
         if (!user) {
-            // Create user if they don't exist
-            user = await prisma.user.create({
-                data: {
-                    clerkId: clerkUser.id,
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
-                    email: clerkUser.emailAddresses[0].emailAddress,
-                    image: clerkUser.imageUrl
-                }
-            })
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
         const store = await prisma.store.findUnique({

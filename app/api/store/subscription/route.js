@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { getOrCreateUserRecord } from '@/lib/security';
 import { prisma } from '../../../../lib/prisma';
 
 export async function POST(request) {
     try {
-        const { userId } = await auth();
+        const user = await getOrCreateUserRecord({ fallbackName: 'Store Owner' });
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
@@ -16,16 +16,14 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Plan and price are required' }, { status: 400 });
         }
 
-        // Check if user has a store
         const store = await prisma.store.findUnique({
-            where: { userId }
+            where: { userId: user.id }
         });
 
         if (!store) {
             return NextResponse.json({ message: 'Store not found. Please create a store first.' }, { status: 404 });
         }
 
-        // Check if user already has an active subscription
         const existingSubscription = await prisma.subscription.findFirst({
             where: {
                 storeId: store.id,
@@ -39,7 +37,6 @@ export async function POST(request) {
             }, { status: 400 });
         }
 
-        // Create subscription request
         const subscription = await prisma.subscription.create({
             data: {
                 storeId: store.id,
@@ -47,12 +44,9 @@ export async function POST(request) {
                 price: parseFloat(price),
                 status: 'PENDING',
                 startDate: new Date(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
             }
         });
-
-        // TODO: Send email notification to admin about new subscription request
-        // TODO: Integrate with payment gateway for actual payment processing
 
         return NextResponse.json({
             message: 'Subscription request submitted successfully. Our team will contact you soon.',
@@ -72,22 +66,20 @@ export async function POST(request) {
 
 export async function GET() {
     try {
-        const { userId } = await auth();
+        const user = await getOrCreateUserRecord({ fallbackName: 'Store Owner' });
 
-        if (!userId) {
+        if (!user) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get user's store
         const store = await prisma.store.findUnique({
-            where: { userId }
+            where: { userId: user.id }
         });
 
         if (!store) {
             return NextResponse.json({ message: 'Store not found' }, { status: 404 });
         }
 
-        // Get subscription
         const subscription = await prisma.subscription.findFirst({
             where: { storeId: store.id },
             orderBy: { createdAt: 'desc' }

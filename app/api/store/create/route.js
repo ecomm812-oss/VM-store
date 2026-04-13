@@ -1,71 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { auth, currentUser } from '@clerk/nextjs/server'
-import { getCurrentUser } from '@/lib/security'
+import { getAuthUserId, getOrCreateUserRecord } from '@/lib/security'
 import { createDevStore, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
-
-async function resolveClerkId() {
-  try {
-    const { userId } = await auth()
-    if (userId) return userId
-  } catch (error) {
-    console.warn('auth() failed in store create route:', error)
-  }
-
-  const fallbackUser = await getCurrentUser()
-  return fallbackUser?.id || null
-}
-
-async function resolveUserForStore(clerkId, fallbackEmail) {
-  if (!clerkId) {
-    throw new Error('Missing clerkId for user lookup')
-  }
-
-  let user = await prisma.user.findUnique({ where: { clerkId } })
-  if (user) return user
-
-  const clerkUser = await currentUser().catch(() => null)
-  const displayName = `${clerkUser?.firstName || ''} ${clerkUser?.lastName || ''}`.trim()
-  const resolvedEmail = (
-    clerkUser?.emailAddresses?.[0]?.emailAddress ||
-    clerkUser?.primaryEmailAddress?.emailAddress ||
-    fallbackEmail ||
-    `${clerkId}@clerk.local`
-  ).toLowerCase()
-
-  try {
-    return await prisma.user.create({
-      data: {
-        clerkId,
-        name: displayName || 'Store Owner',
-        email: resolvedEmail,
-        image: clerkUser?.imageUrl || ''
-      }
-    })
-  } catch (error) {
-    // Recover from legacy data conflicts where email exists with a stale clerkId.
-    if (error?.code === 'P2002') {
-      const existingByEmail = await prisma.user.findUnique({ where: { email: resolvedEmail } })
-      if (existingByEmail) {
-        return prisma.user.update({
-          where: { id: existingByEmail.id },
-          data: {
-            clerkId,
-            name: existingByEmail.name || displayName || 'Store Owner',
-            image: existingByEmail.image || clerkUser?.imageUrl || ''
-          }
-        })
-      }
-    }
-    throw error
-  }
-}
 
 export async function POST(request) {
   let body = null
 
   try {
-    const clerkId = await resolveClerkId()
+    const clerkId = await getAuthUserId()
     if (!clerkId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -87,7 +29,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Username must be 3-30 chars and contain only lowercase letters, numbers, hyphen, or underscore.' }, { status: 400 })
     }
 
-    const user = await resolveUserForStore(clerkId, email)
+    const user = await getOrCreateUserRecord({ clerkId, fallbackEmail: email, fallbackName: 'Store Owner' })
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
     const existingStore = await prisma.store.findFirst({
       where: { userId: user.id }
@@ -117,7 +62,7 @@ export async function POST(request) {
     console.error('Store creation error:', error)
 
     if (shouldUseDevStoreFallback(error)) {
-      const clerkId = await resolveClerkId()
+      const clerkId = await getAuthUserId()
       if (!clerkId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
       }

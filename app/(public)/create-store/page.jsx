@@ -125,7 +125,7 @@ function CreateStoreWithClerk() {
                         } else if (uploadResponse.status === 400) {
                             errorMessage = errorData.error || 'Invalid file. Please use JPG, PNG, GIF, or WebP format.'
                         } else if (uploadResponse.status === 401) {
-                            errorMessage = 'Session expired. Please sign in again and retry.'
+                            errorMessage = errorData.error || 'Your session is no longer valid. Please sign in again.'
                         } else {
                             errorMessage = errorData.error || errorData.details || `Upload failed with status ${uploadResponse.status}`
                         }
@@ -167,13 +167,17 @@ function CreateStoreWithClerk() {
             } else {
                 const error = await response.json().catch(() => ({}))
                 if (response.status === 401) {
-                    throw new Error('Session expired. Please sign in again and retry.')
+                    throw new Error(error.error || 'Your session is no longer valid. Please sign in again.')
                 }
                 throw new Error(error.error || error.details || 'Failed to create store')
             }
         } catch (error) {
             console.error(error)
-            toast.error(error?.message || 'Error submitting store')
+            const errorMessage = error?.message || 'Error submitting store'
+            toast.error(errorMessage)
+            if (errorMessage.toLowerCase().includes('sign in')) {
+                router.push('/sign-in?redirect_url=/create-store')
+            }
         }
     }
 

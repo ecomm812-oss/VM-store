@@ -7,12 +7,33 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { addAddress } from '@/lib/features/address/addressSlice';
 
-const OrderSummary = ({ totalPrice, items }) => {
+const isClerkConfigured = (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '').startsWith('pk_');
 
-    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
+const buildFallbackUser = () => ({
+    firstName: 'Dev',
+    lastName: 'User',
+    emailAddresses: [{ emailAddress: 'dev@example.com' }]
+});
+
+const OrderSummary = ({ totalPrice, items }) => {
+    if (!isClerkConfigured) {
+        return <OrderSummaryContent totalPrice={totalPrice} items={items} user={buildFallbackUser()} />;
+    }
+
+    return <OrderSummaryWithClerk totalPrice={totalPrice} items={items} />;
+}
+
+const OrderSummaryWithClerk = ({ totalPrice, items }) => {
+    const { user } = useUser();
+
+    return <OrderSummaryContent totalPrice={totalPrice} items={items} user={user} />;
+}
+
+const OrderSummaryContent = ({ totalPrice, items, user }) => {
+
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs.';
 
     const router = useRouter();
-    const { user } = useUser();
     const dispatch = useDispatch();
 
     const addressList = useSelector(state => state.address.list);
@@ -24,14 +45,12 @@ const OrderSummary = ({ totalPrice, items }) => {
     const [coupon, setCoupon] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Fetch addresses from API on component mount
     useEffect(() => {
         const fetchAddresses = async () => {
             try {
                 const response = await fetch('/api/user/address');
                 if (response.ok) {
                     const addresses = await response.json();
-                    // Update Redux store with fetched addresses
                     addresses.forEach(address => {
                         if (!addressList.find(a => a.id === address.id)) {
                             dispatch(addAddress(address));
@@ -47,12 +66,13 @@ const OrderSummary = ({ totalPrice, items }) => {
 
         if (user) {
             fetchAddresses();
+        } else {
+            setLoading(false);
         }
     }, [user, dispatch, addressList]);
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
-        
     }
 
     const handlePlaceOrder = async (e) => {
@@ -68,7 +88,7 @@ const OrderSummary = ({ totalPrice, items }) => {
             return;
         }
 
-        const storeId = items[0]?.storeId; // Assuming all items from same store
+        const storeId = items[0]?.storeId;
 
         const orderData = {
             total: coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)) : totalPrice,
@@ -102,20 +122,17 @@ const OrderSummary = ({ totalPrice, items }) => {
             const { order, razorpayOrder } = await response.json();
 
             if (paymentMethod === 'RAZORPAY' && razorpayOrder) {
-                // Verify Razorpay key is available
                 const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
                 if (!razorpayKeyId) {
                     toast.error('Razorpay is not configured on this frontend. Please contact support.');
                     return;
                 }
 
-                // Check if Razorpay script is loaded
                 if (!window.Razorpay) {
                     toast.error('Payment system not initialized. Please refresh the page.');
                     return;
                 }
 
-                // Open Razorpay checkout
                 const options = {
                     key: razorpayKeyId,
                     amount: razorpayOrder.amount,
@@ -124,7 +141,6 @@ const OrderSummary = ({ totalPrice, items }) => {
                     description: 'Order Payment',
                     order_id: razorpayOrder.id,
                     handler: async function (response) {
-                        // Payment successful - update order status in backend
                         try {
                             const updateResponse = await fetch('/api/orders', {
                                 method: 'PUT',
@@ -159,14 +175,14 @@ const OrderSummary = ({ totalPrice, items }) => {
                         }
                     },
                     prefill: {
-                        name: user.firstName + ' ' + user.lastName,
-                        email: user.emailAddresses[0].emailAddress,
+                        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+                        email: user.emailAddresses?.[0]?.emailAddress || '',
                     },
                     theme: {
                         color: '#374151',
                     },
                 };
-                
+
                 try {
                     const rzp = new window.Razorpay(options);
                     rzp.on('payment.failed', function (response) {
@@ -178,7 +194,6 @@ const OrderSummary = ({ totalPrice, items }) => {
                     console.error('Razorpay error:', error);
                 }
             } else {
-                // For COD or other methods
                 toast.success('Order placed successfully!');
                 router.push('/orders');
             }
