@@ -62,7 +62,7 @@ export default function StoreManageProducts() {
 
         if (response.ok) {
             const updatedProduct = await response.json()
-            setProducts(products.map(p => p.id === productId ? updatedProduct : p))
+            setProducts(products.map(p => p.id === productId ? { ...p, ...updatedProduct } : p))
             return updatedProduct
         } else {
             try {

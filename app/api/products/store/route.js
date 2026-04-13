@@ -3,6 +3,48 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { getDevProductsByClerkId, shouldUseDevProductFallback, updateDevProductStock } from '@/lib/dev-product-fallback'
 
+function isProductColumnTypeMismatch(error) {
+    const message = error?.message || ''
+    return message.includes("Expected a string in column 'images', got object") ||
+        message.includes('malformed array literal')
+}
+
+function normalizeStringArrayField(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
+            .filter(Boolean)
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (!trimmed) return []
+
+        try {
+            const parsed = JSON.parse(trimmed)
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
+                    .filter(Boolean)
+            }
+        } catch {
+            // Preserve non-JSON string values as single-item arrays.
+        }
+
+        return [trimmed]
+    }
+
+    return []
+}
+
+function normalizeProductForResponse(product) {
+    return {
+        ...product,
+        images: normalizeStringArrayField(product.images),
+        sizes: normalizeStringArrayField(product.sizes)
+    }
+}
+
 export async function GET() {
     let clerkUser
 
@@ -29,23 +71,48 @@ export async function GET() {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
-        const products = await prisma.product.findMany({
-            where: { storeId: store.id },
-            include: {
-                store: true,
-                rating: true
-            },
-            orderBy: { createdAt: 'desc' }
-        })
+        let products
+        try {
+            products = await prisma.product.findMany({
+                where: { storeId: store.id },
+                include: {
+                    store: true,
+                    rating: true
+                },
+                orderBy: { createdAt: 'desc' }
+            })
+        } catch (productError) {
+            if (!isProductColumnTypeMismatch(productError)) {
+                throw productError
+            }
 
-        // Parse JSON string fields
-        const parsedProducts = products.map(product => ({
-            ...product,
-            images: typeof product.images === 'string' ? JSON.parse(product.images) : product.images,
-            sizes: typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
-        }))
+            const rawProducts = await prisma.$queryRaw`
+                SELECT
+                    id,
+                    name,
+                    description,
+                    mrp,
+                    price,
+                    images,
+                    sizes,
+                    category,
+                    "inStock",
+                    "storeId",
+                    "createdAt",
+                    "updatedAt"
+                FROM "Product"
+                WHERE "storeId" = ${store.id}
+                ORDER BY "createdAt" DESC
+            `
 
-        return NextResponse.json(parsedProducts)
+            products = rawProducts.map(product => ({
+                ...product,
+                store,
+                rating: []
+            }))
+        }
+
+        return NextResponse.json(products.map(normalizeProductForResponse))
     } catch (error) {
         if (shouldUseDevProductFallback(error) && clerkUser?.id) {
             const products = await getDevProductsByClerkId(clerkUser.id)
@@ -95,6 +162,10 @@ export async function PUT(request) {
             where: {
                 id: productId,
                 storeId: store.id
+            },
+            select: {
+                id: true,
+                inStock: true
             }
         })
 
@@ -104,7 +175,11 @@ export async function PUT(request) {
 
         const updatedProduct = await prisma.product.update({
             where: { id: productId },
-            data: { inStock: inStock }
+            data: { inStock: inStock },
+            select: {
+                id: true,
+                inStock: true
+            }
         })
 
         return NextResponse.json(updatedProduct)

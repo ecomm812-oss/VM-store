@@ -6,6 +6,59 @@ import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallba
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+function normalizeStringArrayInput(value) {
+    if (Array.isArray(value)) {
+        return value
+            .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
+            .filter(Boolean)
+    }
+
+    if (typeof value === 'string') {
+        const trimmed = value.trim()
+        if (!trimmed) return []
+
+        try {
+            const parsed = JSON.parse(trimmed)
+            if (Array.isArray(parsed)) {
+                return parsed
+                    .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
+                    .filter(Boolean)
+            }
+        } catch {
+            // Keep raw string as a single item when it is not JSON.
+        }
+
+        return [trimmed]
+    }
+
+    return []
+}
+
+function parseMaybeJsonArray(value) {
+    if (Array.isArray(value)) return value
+    if (typeof value !== 'string') return []
+
+    try {
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed : []
+    } catch {
+        return []
+    }
+}
+
+function isMalformedArrayLiteralError(error) {
+    const message = error?.message || ''
+    return message.includes('malformed array literal')
+}
+
+function normalizeProductResponse(product) {
+    return {
+        ...product,
+        images: normalizeStringArrayInput(product.images),
+        sizes: normalizeStringArrayInput(product.sizes)
+    }
+}
+
 function toImageSrc(value) {
     if (typeof value === 'string') return value
     if (value && typeof value === 'object') {
@@ -183,34 +236,94 @@ export async function POST(request) {
         }
 
         const { name, description, mrp, price, category, images, sizes } = body
+        const normalizedImages = normalizeStringArrayInput(images)
+        const normalizedSizes = normalizeStringArrayInput(sizes)
 
-        if (!name || !description || !mrp || !price || !category || !images || images.length === 0) {
+        if (!name || !description || !mrp || !price || !category || normalizedImages.length === 0) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
         }
 
-        const product = await prisma.product.create({
-            data: {
-                name,
-                description,
-                mrp: parseFloat(mrp),
-                price: parseFloat(price),
-                images: JSON.stringify(Array.isArray(images) ? images : []),
-                sizes: JSON.stringify(Array.isArray(sizes) ? sizes : []),
-                category,
-                storeId: store.id
-            },
-            include: {
-                store: true,
-                rating: true
-            }
-        })
+        const createData = {
+            name,
+            description,
+            mrp: parseFloat(mrp),
+            price: parseFloat(price),
+            images: JSON.stringify(normalizedImages),
+            sizes: JSON.stringify(normalizedSizes),
+            category,
+            storeId: store.id
+        }
 
-        // Parse the JSON strings for response
-        return NextResponse.json({
-            ...product,
-            images: JSON.parse(product.images),
-            sizes: JSON.parse(product.sizes)
-        }, { status: 201 })
+        let product
+        try {
+            product = await prisma.product.create({
+                data: createData,
+                include: {
+                    store: true,
+                    rating: true
+                }
+            })
+        } catch (createError) {
+            if (!isMalformedArrayLiteralError(createError)) {
+                throw createError
+            }
+
+            // Some environments still use Postgres text[] columns for images/sizes.
+            const insertedProducts = await prisma.$queryRaw`
+                INSERT INTO "Product" (
+                    "name",
+                    "description",
+                    "mrp",
+                    "price",
+                    "images",
+                    "sizes",
+                    "category",
+                    "storeId",
+                    "inStock",
+                    "createdAt",
+                    "updatedAt"
+                ) VALUES (
+                    ${createData.name},
+                    ${createData.description},
+                    ${createData.mrp},
+                    ${createData.price},
+                    ${normalizedImages},
+                    ${normalizedSizes},
+                    ${createData.category},
+                    ${createData.storeId},
+                    ${true},
+                    NOW(),
+                    NOW()
+                )
+                RETURNING
+                    "id",
+                    "name",
+                    "description",
+                    "mrp",
+                    "price",
+                    "images",
+                    "sizes",
+                    "category",
+                    "inStock",
+                    "storeId",
+                    "createdAt",
+                    "updatedAt"
+            `
+
+            const insertedProduct = insertedProducts?.[0]
+            if (!insertedProduct) {
+                throw createError
+            }
+
+            product = {
+                ...insertedProduct,
+                store,
+                rating: []
+            }
+        }
+
+        // Support both JSON-string and native-array shapes in response.
+        return NextResponse.json(normalizeProductResponse(product), { status: 201 })
     } catch (error) {
         if (shouldUseDevProductFallback(error) && clerkUser?.id && body) {
             try {
