@@ -59,6 +59,10 @@ function normalizeProductResponse(product) {
     }
 }
 
+function createFallbackProductId() {
+    return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
+}
+
 function toImageSrc(value) {
     if (typeof value === 'string') return value
     if (value && typeof value === 'object') {
@@ -269,8 +273,10 @@ export async function POST(request) {
             }
 
             // Some environments still use Postgres text[] columns for images/sizes.
+            const fallbackProductId = createFallbackProductId()
             const insertedProducts = await prisma.$queryRaw`
                 INSERT INTO "Product" (
+                    "id",
                     "name",
                     "description",
                     "mrp",
@@ -283,6 +289,7 @@ export async function POST(request) {
                     "createdAt",
                     "updatedAt"
                 ) VALUES (
+                    ${fallbackProductId},
                     ${createData.name},
                     ${createData.description},
                     ${createData.mrp},
