@@ -3,25 +3,35 @@ import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 
 export default function Product() {
 
     const { productId } = useParams();
     const [product, setProduct] = useState();
-    const products = useSelector(state => state.product.list);
+    const [loading, setLoading] = useState(true);
 
     const fetchProduct = async () => {
-        const product = products.find((product) => product.id === productId);
-        setProduct(product);
+        try {
+            const response = await fetch(`/api/products?productId=${productId}`)
+            if (!response.ok) {
+                setProduct(null)
+                return
+            }
+
+            const data = await response.json()
+            setProduct(data)
+        } catch {
+            setProduct(null)
+        } finally {
+            setLoading(false)
+        }
     }
 
     useEffect(() => {
-        if (products.length > 0) {
-            fetchProduct()
-        }
+        setLoading(true)
+        fetchProduct()
         scrollTo(0, 0)
-    }, [productId,products]);
+    }, [productId]);
 
     // Generate dynamic metadata
     const generateMetadata = (product) => {
@@ -63,10 +73,12 @@ export default function Product() {
                 </div>
 
                 {/* Product Details */}
+                {loading && <p className="text-slate-500">Loading product...</p>}
                 {product && (<ProductDetails product={product} />)}
 
                 {/* Description & Reviews */}
                 {product && (<ProductDescription product={product} />)}
+                {!loading && !product && <p className="text-red-500">Unable to load product details.</p>}
             </div>
         </div>
     );

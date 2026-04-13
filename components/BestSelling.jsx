@@ -17,8 +17,8 @@ const BestSelling = () => {
                 {products
                     .slice()
                     .sort((a, b) => {
-                        const aRatingCount = a?.rating?.length || 0
-                        const bRatingCount = b?.rating?.length || 0
+                        const aRatingCount = typeof a?.ratingCount === 'number' ? a.ratingCount : (a?.rating?.length || 0)
+                        const bRatingCount = typeof b?.ratingCount === 'number' ? b.ratingCount : (b?.rating?.length || 0)
                         return bRatingCount - aRatingCount
                     })
                     .slice(0, displayQuantity)

@@ -126,6 +126,7 @@ export async function GET(request) {
         const { searchParams } = new URL(request.url)
         const search = searchParams.get('search')
         const category = searchParams.get('category')
+        const productId = searchParams.get('productId')
 
         const where = {}
         if (search) {
@@ -138,13 +139,10 @@ export async function GET(request) {
             where.category = category
         }
 
-        let products
-        try {
-            products = await prisma.product.findMany({
-                where: {
-                    ...where,
-                    inStock: true
-                },
+        // Product details view: fetch one product with full rating payload.
+        if (productId) {
+            const product = await prisma.product.findUnique({
+                where: { id: productId },
                 include: {
                     store: true,
                     rating: {
@@ -158,6 +156,38 @@ export async function GET(request) {
                         },
                         orderBy: {
                             createdAt: 'desc'
+                        }
+                    }
+                }
+            })
+
+            if (!product) {
+                return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+            }
+
+            return NextResponse.json(normalizeProductResponse(product))
+        }
+
+        let products
+        try {
+            products = await prisma.product.findMany({
+                where: {
+                    ...where,
+                    inStock: true
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    mrp: true,
+                    price: true,
+                    images: true,
+                    sizes: true,
+                    category: true,
+                    createdAt: true,
+                    _count: {
+                        select: {
+                            rating: true
                         }
                     }
                 }
@@ -177,26 +207,21 @@ export async function GET(request) {
                     p."images",
                     p."sizes",
                     p."category",
-                    p."inStock",
-                    p."storeId",
                     p."createdAt",
-                    p."updatedAt",
-                    s."id" AS "store__id",
-                    s."name" AS "store__name",
-                    s."description" AS "store__description",
-                    s."username" AS "store__username",
-                    s."address" AS "store__address",
-                    s."status" AS "store__status",
-                    s."isActive" AS "store__isActive",
-                    s."logo" AS "store__logo",
-                    s."email" AS "store__email",
-                    s."contact" AS "store__contact",
-                    s."userId" AS "store__userId",
-                    s."createdAt" AS "store__createdAt",
-                    s."updatedAt" AS "store__updatedAt"
+                    COUNT(r."id")::int AS "ratingCount"
                 FROM "Product" p
-                LEFT JOIN "Store" s ON s."id" = p."storeId"
+                LEFT JOIN "Rating" r ON r."productId" = p."id"
                 WHERE p."inStock" = true
+                GROUP BY
+                    p."id",
+                    p."name",
+                    p."description",
+                    p."mrp",
+                    p."price",
+                    p."images",
+                    p."sizes",
+                    p."category",
+                    p."createdAt"
                 ORDER BY p."createdAt" DESC
             `
 
@@ -210,26 +235,10 @@ export async function GET(request) {
                     images: product.images,
                     sizes: product.sizes,
                     category: product.category,
-                    inStock: product.inStock,
-                    storeId: product.storeId,
                     createdAt: product.createdAt,
-                    updatedAt: product.updatedAt,
-                    store: product.store__id ? {
-                        id: product.store__id,
-                        name: product.store__name,
-                        description: product.store__description,
-                        username: product.store__username,
-                        address: product.store__address,
-                        status: product.store__status,
-                        isActive: product.store__isActive,
-                        logo: product.store__logo,
-                        email: product.store__email,
-                        contact: product.store__contact,
-                        userId: product.store__userId,
-                        createdAt: product.store__createdAt,
-                        updatedAt: product.store__updatedAt
-                    } : null,
-                    rating: []
+                    _count: {
+                        rating: product.ratingCount || 0
+                    }
                 }))
                 .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
                 .filter(product => !category || product.category === category)
@@ -257,7 +266,10 @@ export async function GET(request) {
                     return {
                         ...product,
                         images: normalizedImages,
-                        sizes: Array.isArray(parsedSizes) ? parsedSizes : []
+                        sizes: Array.isArray(parsedSizes) ? parsedSizes : [],
+                        rating: [],
+                        ratingCount: product?._count?.rating || 0,
+                        averageRating: 0
                     }
                 } catch (error) {
                     console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error)

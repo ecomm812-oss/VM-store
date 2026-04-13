@@ -13,10 +13,16 @@ const ProductCard = ({ product }) => {
         return null; // Don't render invalid products
     }
 
-    // calculate the average rating of the product
-    const rating = product.rating && product.rating.length > 0 
-        ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
-        : 0;
+    const ratingCount = typeof product.ratingCount === 'number'
+        ? product.ratingCount
+        : (Array.isArray(product.rating) ? product.rating.length : 0)
+
+    // calculate average rating from precomputed value when available.
+    const rating = typeof product.averageRating === 'number'
+        ? Math.round(product.averageRating)
+        : (Array.isArray(product.rating) && product.rating.length > 0
+            ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
+            : 0)
 
     return (
         <Link href={`/product/${product.id}`} className='group max-xl:mx-auto animate-fadeInUp stagger-item'>
@@ -31,6 +37,7 @@ const ProductCard = ({ product }) => {
                             <StarIcon key={index} size={14} className='text-transparent transition-transform duration-300 group-hover:scale-110' fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
                         ))}
                     </div>
+                    <p className='text-xs text-slate-500 mt-1'>{ratingCount} reviews</p>
                 </div>
                 <p className='font-semibold transition-colors duration-300 group-hover:text-green-600'>{currency}{product.price}</p>
             </div>
