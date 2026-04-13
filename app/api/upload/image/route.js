@@ -13,6 +13,21 @@ function hasValidClerkConfig() {
     return publishable.startsWith('pk_') && secret.startsWith('sk_')
 }
 
+async function saveFileLocally(buffer, fileName) {
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+
+    try {
+        await mkdir(uploadsDir, { recursive: true })
+    } catch (error) {
+        console.error('Directory creation error:', error)
+    }
+
+    const filePath = join(uploadsDir, fileName)
+    await writeFile(filePath, buffer)
+
+    return `/uploads/${fileName}`
+}
+
 export async function POST(request) {
     try {
         const isDevMode = process.env.NODE_ENV !== 'production' && !hasValidClerkConfig()
@@ -68,7 +83,15 @@ export async function POST(request) {
         const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV
         console.log('Environment check:', { NODE_ENV: process.env.NODE_ENV, VERCEL: process.env.VERCEL, isVercel })
 
-        if (isVercel && process.env.BLOB_READ_WRITE_TOKEN) {
+        if (isVercel) {
+            if (!process.env.BLOB_READ_WRITE_TOKEN) {
+                console.error('Blob storage is not configured for this deployment')
+                return NextResponse.json({
+                    error: 'Image storage is not configured on the server.',
+                    details: 'Missing blob storage configuration.'
+                }, { status: 500 })
+            }
+
             console.log('Using Vercel Blob storage')
             try {
                 const { put } = await import('@vercel/blob')
@@ -82,32 +105,15 @@ export async function POST(request) {
                 console.log('Blob upload successful:', imageUrl)
             } catch (blobError) {
                 console.error('Blob upload failed:', blobError)
-                console.log('Falling back to local file storage')
-                const uploadsDir = join(process.cwd(), 'public', 'uploads')
-                try {
-                    await mkdir(uploadsDir, { recursive: true })
-                } catch (error) {
-                    console.error('Directory creation error:', error)
-                }
 
-                const filePath = join(uploadsDir, fileName)
-                await writeFile(filePath, buffer)
-                imageUrl = `/uploads/${fileName}`
-                console.log('Local file saved:', imageUrl)
+                return NextResponse.json({
+                    error: 'Image storage upload failed.',
+                    details: 'The server could not store the uploaded image.'
+                }, { status: 500 })
             }
         } else {
             console.log('Using local file storage (development mode)')
-            const uploadsDir = join(process.cwd(), 'public', 'uploads')
-            try {
-                await mkdir(uploadsDir, { recursive: true })
-            } catch (error) {
-                console.error('Directory creation error:', error)
-            }
-
-            const filePath = join(uploadsDir, fileName)
-            await writeFile(filePath, buffer)
-
-            imageUrl = `/uploads/${fileName}`
+            imageUrl = await saveFileLocally(buffer, fileName)
             console.log('Local file saved:', imageUrl)
         }
 
@@ -200,4 +206,5 @@ export async function POST(request) {
     }
 }
 
+export const runtime = 'nodejs'
 export const maxDuration = 60

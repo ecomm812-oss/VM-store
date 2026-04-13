@@ -88,15 +88,18 @@ export default function StoreAddProduct() {
 
                 toast.success('Image uploaded successfully!')
             } else {
-                try {
-                    const errorData = await response.json()
-                    throw new Error(errorData.error || 'Upload failed')
-                } catch (parseError) {
-                    if (parseError.message && parseError.message.includes('Upload failed')) {
-                        throw parseError
-                    }
-                    throw new Error('Upload failed')
+                const errorData = await response.json().catch(() => ({}))
+
+                let errorMessage = errorData.error || errorData.details || 'Upload failed'
+                if (response.status === 401) {
+                    errorMessage = errorData.error || 'Please sign in again to upload images.'
+                } else if (response.status === 413) {
+                    errorMessage = errorData.error || 'File is too large. Maximum file size is 5MB.'
+                } else if (response.status === 400) {
+                    errorMessage = errorData.error || 'Invalid image. Please use JPG, PNG, GIF, or WebP.'
                 }
+
+                throw new Error(errorMessage)
             }
         } catch (error) {
             console.error('Upload error:', error)
