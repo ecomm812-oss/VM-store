@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { validateFileUpload, createSecureErrorResponse, getAuthUserId } from '@/lib/security'
 // import { put } from '@vercel/blob' // Import conditionally below
 import { analyzeImage } from '@/lib/ai-image-analysis'
+import { v2 as cloudinary } from 'cloudinary'
 
 function hasValidClerkConfig() {
     const publishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
@@ -26,6 +27,90 @@ async function saveFileLocally(buffer, fileName) {
     await writeFile(filePath, buffer)
 
     return `/uploads/${fileName}`
+}
+
+function createInlineImageUrl(buffer, contentType) {
+    const mimeType = contentType || 'image/jpeg'
+    return `data:${mimeType};base64,${buffer.toString('base64')}`
+}
+
+function hasCloudinaryConfig() {
+    return Boolean(
+        process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET
+    )
+}
+
+async function uploadToCloudinary(buffer, fileName, contentType) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+        secure: true
+    })
+
+    const dataUri = `data:${contentType || 'image/jpeg'};base64,${buffer.toString('base64')}`
+
+    const result = await cloudinary.uploader.upload(dataUri, {
+        folder: 'vm-store',
+        public_id: fileName.replace(/\.[^.]+$/, ''),
+        resource_type: 'image'
+    })
+
+    return result.secure_url
+}
+
+async function storeImage(buffer, fileName, contentType) {
+    const useCloudinary = hasCloudinaryConfig()
+    const useBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
+    console.log('Storage check:', {
+        NODE_ENV: process.env.NODE_ENV,
+        VERCEL: process.env.VERCEL,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+        useCloudinary,
+        useBlobStorage
+    })
+
+    if (useCloudinary) {
+        console.log('Using Cloudinary storage')
+        try {
+            const cloudinaryUrl = await uploadToCloudinary(buffer, fileName, contentType)
+            console.log('Cloudinary upload successful:', cloudinaryUrl)
+            return { url: cloudinaryUrl, storage: 'cloudinary' }
+        } catch (cloudinaryError) {
+            console.error('Cloudinary upload failed, falling back:', cloudinaryError)
+        }
+    }
+
+    if (useBlobStorage) {
+        console.log('Using Vercel Blob storage')
+        try {
+            const { put } = await import('@vercel/blob')
+
+            const blob = await put(fileName, buffer, {
+                access: 'public',
+                contentType
+            })
+
+            console.log('Blob upload successful:', blob.url)
+            return { url: blob.url, storage: 'blob' }
+        } catch (blobError) {
+            console.error('Blob upload failed, falling back:', blobError)
+        }
+    }
+
+    try {
+        const localUrl = await saveFileLocally(buffer, fileName)
+        console.log('Local file saved:', localUrl)
+        return { url: localUrl, storage: 'local' }
+    } catch (localError) {
+        console.error('Local file storage failed, falling back to inline image:', localError)
+        return {
+            url: createInlineImageUrl(buffer, contentType),
+            storage: 'inline'
+        }
+    }
 }
 
 export async function POST(request) {
@@ -79,40 +164,8 @@ export async function POST(request) {
         const ext = allowedExts.includes(originalExt) ? originalExt : 'jpg'
         const fileName = `${randomUUID()}.${ext}`
 
-        let imageUrl
-        const useBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
-        console.log('Storage check:', {
-            NODE_ENV: process.env.NODE_ENV,
-            VERCEL: process.env.VERCEL,
-            VERCEL_ENV: process.env.VERCEL_ENV,
-            useBlobStorage
-        })
-
-        if (useBlobStorage) {
-            console.log('Using Vercel Blob storage')
-            try {
-                const { put } = await import('@vercel/blob')
-
-                const blob = await put(fileName, buffer, {
-                    access: 'public',
-                    contentType: file.type
-                })
-
-                imageUrl = blob.url
-                console.log('Blob upload successful:', imageUrl)
-            } catch (blobError) {
-                console.error('Blob upload failed:', blobError)
-
-                return NextResponse.json({
-                    error: 'Image storage upload failed.',
-                    details: 'The server could not store the uploaded image in blob storage.'
-                }, { status: 500 })
-            }
-        } else {
-            console.log('Using local file storage')
-            imageUrl = await saveFileLocally(buffer, fileName)
-            console.log('Local file saved:', imageUrl)
-        }
+        const storedImage = await storeImage(buffer, fileName, file.type)
+        const imageUrl = storedImage.url
 
         let imageAnalysis = null
         if (process.env.GOOGLE_AI_KEY) {
@@ -164,6 +217,7 @@ export async function POST(request) {
         return NextResponse.json({
             success: true,
             url: imageUrl,
+            storage: storedImage.storage,
             message: 'Image uploaded successfully',
             ai: {
                 description: imageAnalysis.description,
@@ -187,12 +241,14 @@ export async function POST(request) {
 
         let errorMessage = 'Failed to upload image'
 
-        if (error.message?.includes('ENOSPC')) {
+        if (error.code === 'ENOSPC' || error.message?.includes('ENOSPC')) {
             errorMessage = 'Storage space full'
-        } else if (error.message?.includes('EACCES')) {
+        } else if (error.code === 'EACCES' || error.message?.includes('EACCES')) {
             errorMessage = 'Permission denied'
-        } else if (error.message?.includes('ENOENT')) {
+        } else if (error.code === 'ENOENT' || error.message?.includes('ENOENT')) {
             errorMessage = 'Directory not found'
+        } else if (error.code === 'EROFS' || error.message?.includes('EROFS')) {
+            errorMessage = 'Local image storage is read-only on this server'
         } else if (error.code === 'ERR_INVALID_URL') {
             errorMessage = 'Invalid blob URL configuration'
         } else if (error.message?.toLowerCase().includes('token')) {

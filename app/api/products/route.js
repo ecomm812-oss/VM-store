@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
 import { productDummyData } from '@/assets/assets'
+import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -139,7 +140,12 @@ export async function GET(request) {
 
         if (shouldUseFallback(error)) {
             console.warn('[API] Database unavailable in development, serving fallback products')
-            return NextResponse.json(normalizeFallbackProducts(productDummyData, search, category))
+            const [dummyProducts, devProducts] = await Promise.all([
+                normalizeFallbackProducts(productDummyData, search, category),
+                getPublicDevProducts({ search: search || '', category: category || '' })
+            ])
+
+            return NextResponse.json([...devProducts, ...dummyProducts])
         }
 
         console.error('[API] Error fetching products:', error)
@@ -148,11 +154,16 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+    let body
+    let clerkUser
+
     try {
-        const clerkUser = await getCurrentUser()
+        clerkUser = await getCurrentUser()
         if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
+
+        body = await request.json()
 
         // Find the user in our database, or create if not exists
         let user = await prisma.user.findUnique({
@@ -179,7 +190,6 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
-        const body = await request.json()
         const { name, description, mrp, price, category, images, sizes } = body
 
         if (!name || !description || !mrp || !price || !category || !images || images.length === 0) {
@@ -210,6 +220,25 @@ export async function POST(request) {
             sizes: JSON.parse(product.sizes)
         }, { status: 201 })
     } catch (error) {
+        if (shouldUseDevProductFallback(error) && clerkUser?.id && body) {
+            try {
+                const product = await createDevProduct({
+                    clerkId: clerkUser.id,
+                    name: body.name,
+                    description: body.description,
+                    mrp: body.mrp,
+                    price: body.price,
+                    category: body.category,
+                    images: body.images,
+                    sizes: body.sizes
+                })
+
+                return NextResponse.json(product, { status: 201 })
+            } catch (fallbackError) {
+                return NextResponse.json({ error: fallbackError.message }, { status: fallbackError.statusCode || 500 })
+            }
+        }
+
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

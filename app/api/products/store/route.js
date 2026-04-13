@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
+import { getDevProductsByClerkId, shouldUseDevProductFallback, updateDevProductStock } from '@/lib/dev-product-fallback'
 
 export async function GET() {
+    let clerkUser
+
     try {
-        const clerkUser = await getCurrentUser()
+        clerkUser = await getCurrentUser()
         if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -52,13 +55,21 @@ export async function GET() {
 
         return NextResponse.json(parsedProducts)
     } catch (error) {
+        if (shouldUseDevProductFallback(error) && clerkUser?.id) {
+            const products = await getDevProductsByClerkId(clerkUser.id)
+            return NextResponse.json(products)
+        }
+
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }
 
 export async function PUT(request) {
+    let clerkUser
+    let requestBody
+
     try {
-        const clerkUser = await getCurrentUser()
+        clerkUser = await getCurrentUser()
         if (!clerkUser?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -88,7 +99,8 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
-        const { productId, inStock } = await request.json()
+        requestBody = await request.json()
+        const { productId, inStock } = requestBody
 
         if (!productId) {
             return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
@@ -113,6 +125,20 @@ export async function PUT(request) {
 
         return NextResponse.json(updatedProduct)
     } catch (error) {
+        if (shouldUseDevProductFallback(error) && clerkUser?.id && requestBody?.productId) {
+            try {
+                const updatedProduct = await updateDevProductStock({
+                    clerkId: clerkUser.id,
+                    productId: requestBody.productId,
+                    inStock: requestBody.inStock
+                })
+
+                return NextResponse.json(updatedProduct)
+            } catch (fallbackError) {
+                return NextResponse.json({ error: fallbackError.message }, { status: fallbackError.statusCode || 500 })
+            }
+        }
+
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 }

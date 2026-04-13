@@ -1,9 +1,51 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { dummyStoreData, productDummyData } from '@/assets/assets'
+import { getDevProductsByStoreId, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
+import { getDevStoreByUsername, shouldUseDevStoreFallback } from '@/lib/dev-store-fallback'
+
+function toImageSrc(value) {
+    if (typeof value === 'string') return value
+    if (value && typeof value === 'object') {
+        if (typeof value.src === 'string') return value.src
+        if (typeof value.default === 'string') return value.default
+        if (value.default && typeof value.default.src === 'string') return value.default.src
+    }
+    return null
+}
+
+function normalizeFallbackProducts(products) {
+    return products
+        .map(product => ({
+            ...product,
+            images: Array.isArray(product.images) ? product.images.map(toImageSrc).filter(Boolean) : [],
+            store: product.store ? {
+                ...product.store,
+                logo: toImageSrc(product.store.logo),
+                user: product.store.user ? {
+                    ...product.store.user,
+                    image: toImageSrc(product.store.user.image)
+                } : null
+            } : null,
+            rating: Array.isArray(product.rating)
+                ? product.rating.map(entry => ({
+                    ...entry,
+                    user: entry.user ? {
+                        ...entry.user,
+                        image: toImageSrc(entry.user.image)
+                    } : null
+                }))
+                : []
+        }))
+        .filter(product => product.images.length > 0)
+}
 
 export async function GET(request, { params }) {
+    let username
+
     try {
-        const { username } = await params
+        const resolvedParams = await params
+        username = resolvedParams.username
 
         if (!username) {
             return NextResponse.json({ error: 'Username is required' }, { status: 400 })
@@ -42,6 +84,34 @@ export async function GET(request, { params }) {
             products: parsedProducts
         })
     } catch (error) {
+        if (shouldUseDevStoreFallback(error) || shouldUseDevProductFallback(error)) {
+            if (!username) {
+                return NextResponse.json({ error: 'Username is required' }, { status: 400 })
+            }
+
+            const devStore = await getDevStoreByUsername(username)
+            if (devStore) {
+                const products = await getDevProductsByStoreId(devStore.id)
+                return NextResponse.json({ store: devStore, products })
+            }
+
+            if (username.toLowerCase() === dummyStoreData.username.toLowerCase()) {
+                return NextResponse.json({
+                    store: {
+                        ...dummyStoreData,
+                        logo: toImageSrc(dummyStoreData.logo),
+                        user: dummyStoreData.user ? {
+                            ...dummyStoreData.user,
+                            image: toImageSrc(dummyStoreData.user.image)
+                        } : null
+                    },
+                    products: normalizeFallbackProducts(productDummyData)
+                })
+            }
+
+            return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+        }
+
         console.error('Store shop error:', error)
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
