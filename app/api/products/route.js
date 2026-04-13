@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { productDummyData } from '@/assets/assets'
-import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
+import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -138,7 +138,7 @@ export async function GET(request) {
         const search = searchParams.get('search')
         const category = searchParams.get('category')
 
-        if (shouldUseFallback(error)) {
+        if (shouldUseFallback(error) && shouldAllowDevProductFileFallback()) {
             console.warn('[API] Database unavailable in development, serving fallback products')
             const [dummyProducts, devProducts] = await Promise.all([
                 normalizeFallbackProducts(productDummyData, search, category),

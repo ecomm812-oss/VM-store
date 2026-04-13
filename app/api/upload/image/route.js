@@ -34,6 +34,10 @@ function createInlineImageUrl(buffer, contentType) {
     return `data:${mimeType};base64,${buffer.toString('base64')}`
 }
 
+function shouldStoreUploadsInDatabase() {
+    return (process.env.STORE_UPLOADS_IN_DATABASE || '').toLowerCase() === 'true'
+}
+
 function hasCloudinaryConfig() {
     return Boolean(
         process.env.CLOUDINARY_CLOUD_NAME &&
@@ -62,6 +66,14 @@ async function uploadToCloudinary(buffer, fileName, contentType) {
 }
 
 async function storeImage(buffer, fileName, contentType) {
+    if (shouldStoreUploadsInDatabase()) {
+        console.log('Using database-backed inline image storage')
+        return {
+            url: createInlineImageUrl(buffer, contentType),
+            storage: 'database'
+        }
+    }
+
     const useCloudinary = hasCloudinaryConfig()
     const useBlobStorage = Boolean(process.env.BLOB_READ_WRITE_TOKEN)
     console.log('Storage check:', {

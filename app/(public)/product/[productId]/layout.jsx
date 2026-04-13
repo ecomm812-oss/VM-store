@@ -3,7 +3,7 @@ import { pageMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({ params }) {
   try {
-    const { productId } = params;
+    const { productId } = await params;
     const product = await prisma.product.findUnique({
       where: { id: productId },
       select: { name: true, description: true }

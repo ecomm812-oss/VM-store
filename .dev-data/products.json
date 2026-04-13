@@ -1,0 +1,21 @@
+{
+  "products": [
+    {
+      "id": "dev_product_1776090489057",
+      "name": "x sx",
+      "description": "sxsa",
+      "mrp": 100,
+      "price": 48,
+      "images": [
+        "/uploads/7f58e962-3361-4ea8-a1ae-11841b15999d.webp"
+      ],
+      "sizes": [],
+      "category": "Clothing",
+      "inStock": true,
+      "storeId": "dev_store_1775989945290",
+      "createdAt": "2026-04-13T14:28:09.051Z",
+      "updatedAt": "2026-04-13T14:28:09.051Z",
+      "rating": []
+    }
+  ]
+}
