@@ -54,11 +54,49 @@ function isMalformedArrayLiteralError(error) {
 }
 
 function normalizeProductResponse(product) {
-    return {
-        ...product,
-        images: normalizeStringArrayInput(product.images),
-        sizes: normalizeStringArrayInput(product.sizes)
+    if (!product) return null
+
+    // Handle images - could be array of strings or already normalized
+    let images = product.images
+    if (Array.isArray(images)) {
+        images = images.filter(img => typeof img === 'string' && img.trim()).map(img => img.trim())
+    } else if (typeof images === 'string') {
+        images = normalizeStringArrayInput(images)
+    } else {
+        images = []
     }
+
+    // Handle sizes - could be array of strings or JSON string
+    let sizes = product.sizes
+    if (Array.isArray(sizes)) {
+        sizes = sizes.filter(size => typeof size === 'string' && size.trim()).map(size => size.trim())
+    } else if (typeof sizes === 'string') {
+        sizes = normalizeStringArrayInput(sizes)
+    } else {
+        sizes = []
+    }
+
+    // Ensure rating is an array
+    const rating = Array.isArray(product.rating) ? product.rating : []
+
+    // Build normalized product
+    const normalized = {
+        ...product,
+        images,
+        sizes,
+        rating,
+        // Ensure all required fields exist with defaults
+        id: product.id || null,
+        name: product.name || 'Unknown Product',
+        description: product.description || '',
+        price: product.price ?? 0,
+        mrp: product.mrp ?? product.price ?? 0,
+        category: product.category || 'Uncategorized',
+        inStock: product.inStock !== false,
+        store: product.store || null,
+    }
+
+    return normalized
 }
 
 function createFallbackProductId() {
@@ -143,6 +181,7 @@ export async function GET(request) {
 
         // Product details view: fetch one product with full rating payload.
         if (productId) {
+            console.log('[API] Fetching product:', productId)
             let product = null
 
             // First, try to fetch from database
@@ -168,12 +207,16 @@ export async function GET(request) {
                 })
 
                 if (product) {
-                    return NextResponse.json(normalizeProductResponse(product), {
+                    const normalized = normalizeProductResponse(product)
+                    console.log('[API] Product found in database:', normalized?.name)
+                    return NextResponse.json(normalized, {
                         headers: {
                             'Cache-Control': 'private, no-store'
                         }
                     })
                 }
+
+                console.log('[API] Product not found in database:', productId)
             } catch (dbError) {
                 // Log database errors for debugging
                 console.error('[API] Product fetch error:', dbError?.message)
@@ -183,7 +226,9 @@ export async function GET(request) {
                     console.warn('[API] Database unavailable for product details, trying dev fallback')
                     const devProduct = await getDevProductById(productId)
                     if (devProduct) {
-                        return NextResponse.json(normalizeProductResponse(devProduct), {
+                        const normalized = normalizeProductResponse(devProduct)
+                        console.log('[API] Product found in dev fallback:', normalized?.name)
+                        return NextResponse.json(normalized, {
                             headers: {
                                 'Cache-Control': 'private, no-store'
                             }
@@ -201,9 +246,12 @@ export async function GET(request) {
             // Try dev fallback if database didn't return a product
             if (shouldAllowDevProductFileFallback()) {
                 try {
+                    console.log('[API] Trying dev fallback for product:', productId)
                     const devProduct = await getDevProductById(productId)
                     if (devProduct) {
-                        return NextResponse.json(normalizeProductResponse(devProduct), {
+                        const normalized = normalizeProductResponse(devProduct)
+                        console.log('[API] Product found in dev fallback:', normalized?.name)
+                        return NextResponse.json(normalized, {
                             headers: {
                                 'Cache-Control': 'private, no-store'
                             }
@@ -215,6 +263,21 @@ export async function GET(request) {
                 }
             }
 
+            // Try dummy data as last resort
+            console.log('[API] Trying dummy data fallback for product:', productId)
+            const { productDummyData } = await import('@/assets/assets')
+            const dummyProduct = productDummyData.find(p => p.id === productId)
+            if (dummyProduct) {
+                const normalized = normalizeProductResponse(dummyProduct)
+                console.log('[API] Product found in dummy data:', normalized?.name)
+                return NextResponse.json(normalized, {
+                    headers: {
+                        'Cache-Control': 'private, no-store'
+                    }
+                })
+            }
+
+            console.log('[API] Product not found anywhere:', productId)
             return NextResponse.json({ error: 'Product not found' }, { status: 404 })
         }
 

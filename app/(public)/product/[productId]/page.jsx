@@ -12,24 +12,51 @@ export default function Product() {
 
     const fetchProduct = async () => {
         try {
+            console.log('[Product Page] Fetching product with ID:', productId)
             const response = await fetch(`/api/products?productId=${productId}`)
+            
+            console.log('[Product Page] API response status:', response.status)
+            
+            const data = await response.json()
+            console.log('[Product Page] API response data:', data)
+
             if (!response.ok) {
-                console.warn(`[Product Page] API returned status ${response.status} for product ${productId}`)
-                const errorData = await response.json().catch(() => null)
-                console.warn('[Product Page] Error data:', errorData)
+                console.error(`[Product Page] API returned error status ${response.status}:`, data)
                 setProduct(null)
                 return
             }
 
-            const data = await response.json()
-            if (!data || typeof data !== 'object') {
-                console.warn('[Product Page] Invalid product data received:', data)
+            // Check if response is an error object
+            if (data?.error) {
+                console.error('[Product Page] API returned error:', data.error)
                 setProduct(null)
                 return
             }
+
+            // Validate product data has required fields
+            if (!data || typeof data !== 'object' || !data.id || !data.name) {
+                console.error('[Product Page] Invalid product data - missing required fields:', data)
+                setProduct(null)
+                return
+            }
+
+            // Ensure images is an array
+            if (!Array.isArray(data.images)) {
+                console.warn('[Product Page] Product images is not an array, converting...')
+                data.images = data.images ? [data.images] : []
+            }
+
+            // Ensure rating is an array
+            if (!Array.isArray(data.rating)) {
+                console.warn('[Product Page] Product rating is not an array, defaulting to empty')
+                data.rating = []
+            }
+
+            console.log('[Product Page] Product loaded successfully:', data.name)
             setProduct(data)
         } catch (error) {
-            console.error('[Product Page] Fetch error:', error)
+            console.error('[Product Page] Fetch error:', error?.message || error)
+            console.error('[Product Page] Full error:', error)
             setProduct(null)
         } finally {
             setLoading(false)
