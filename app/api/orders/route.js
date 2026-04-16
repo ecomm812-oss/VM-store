@@ -4,6 +4,38 @@ import { getCurrentUser, getOrCreateUserRecord, shouldUseDatabaseFallback } from
 import Razorpay from 'razorpay'
 import { checkRateLimit } from '@/lib/rateLimit'
 
+function isProductColumnTypeMismatch(error) {
+    const message = error?.message || ''
+    return message.includes("Expected a string in column 'images', got object") ||
+        message.includes('malformed array literal')
+}
+
+async function attachOrderItemProductNames(orders) {
+    const productIds = [...new Set(
+        orders.flatMap(order => (order.orderItems || []).map(item => item.productId)).filter(Boolean)
+    )]
+
+    if (productIds.length === 0) return orders
+
+    const products = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        select: {
+            id: true,
+            name: true
+        }
+    })
+
+    const productMap = new Map(products.map(product => [product.id, product]))
+
+    return orders.map(order => ({
+        ...order,
+        orderItems: (order.orderItems || []).map(item => ({
+            ...item,
+            product: productMap.get(item.productId) || { id: item.productId, name: 'Unknown Product' }
+        }))
+    }))
+}
+
 export async function POST(request) {
     try {
         const clerkUser = await getCurrentUser()
@@ -127,7 +159,12 @@ export async function POST(request) {
             include: {
                 orderItems: {
                     include: {
-                        product: true
+                        product: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
                     }
                 }
             }
@@ -192,19 +229,43 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const orders = await prisma.order.findMany({
-            where: { userId: user.id },
-            include: {
-                orderItems: {
-                    include: {
-                        product: true
-                    }
+        let orders
+        try {
+            orders = await prisma.order.findMany({
+                where: { userId: user.id },
+                include: {
+                    orderItems: {
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true
+                                }
+                            }
+                        }
+                    },
+                    store: true,
+                    address: true
                 },
-                store: true,
-                address: true
-            },
-            orderBy: { createdAt: 'desc' }
-        })
+                orderBy: { createdAt: 'desc' }
+            })
+        } catch (error) {
+            if (!isProductColumnTypeMismatch(error)) {
+                throw error
+            }
+
+            const fallbackOrders = await prisma.order.findMany({
+                where: { userId: user.id },
+                include: {
+                    orderItems: true,
+                    store: true,
+                    address: true
+                },
+                orderBy: { createdAt: 'desc' }
+            })
+
+            orders = await attachOrderItemProductNames(fallbackOrders)
+        }
 
         // Filter out orders that don't have orderItems (defensive programming)
         const validOrders = orders.filter(order => order.orderItems && order.orderItems.length > 0)
@@ -277,7 +338,12 @@ export async function PUT(request) {
             include: {
                 orderItems: {
                     include: {
-                        product: true
+                        product: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
                     }
                 },
                 store: true,

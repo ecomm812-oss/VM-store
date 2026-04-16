@@ -43,7 +43,12 @@ export async function GET(request) {
             include: {
                 orderItems: {
                     include: {
-                        product: true
+                        product: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
                     }
                 },
                 store: true,
@@ -135,7 +140,12 @@ export async function PUT(request) {
             include: {
                 orderItems: {
                     include: {
-                        product: true
+                        product: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
                     }
                 },
                 store: true,

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { productDummyData } from '@/assets/assets'
-import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
+import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -46,18 +46,6 @@ function normalizeStringArrayInput(value) {
     }
 
     return []
-}
-
-function parseMaybeJsonArray(value) {
-    if (Array.isArray(value)) return value
-    if (typeof value !== 'string') return []
-
-    try {
-        const parsed = JSON.parse(value)
-        return Array.isArray(parsed) ? parsed : []
-    } catch {
-        return []
-    }
 }
 
 function isMalformedArrayLiteralError(error) {
@@ -155,35 +143,63 @@ export async function GET(request) {
 
         // Product details view: fetch one product with full rating payload.
         if (productId) {
-            const product = await prisma.product.findUnique({
-                where: { id: productId },
-                include: {
-                    store: true,
-                    rating: {
-                        include: {
-                            user: {
-                                select: {
-                                    name: true,
-                                    image: true
+            try {
+                const product = await prisma.product.findUnique({
+                    where: { id: productId },
+                    include: {
+                        store: true,
+                        rating: {
+                            include: {
+                                user: {
+                                    select: {
+                                        name: true,
+                                        image: true
+                                    }
                                 }
+                            },
+                            orderBy: {
+                                createdAt: 'desc'
                             }
-                        },
-                        orderBy: {
-                            createdAt: 'desc'
                         }
                     }
-                }
-            })
+                })
 
-            if (!product) {
-                return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+                if (product) {
+                    return NextResponse.json(normalizeProductResponse(product), {
+                        headers: {
+                            'Cache-Control': 'private, no-store'
+                        }
+                    })
+                }
+            } catch (error) {
+                // If database fails and we're in development, try fallback
+                if (shouldUseDevProductFallback(error) && shouldAllowDevProductFileFallback()) {
+                    console.warn('[API] Database unavailable for product details, trying dev fallback')
+                    const devProduct = await getDevProductById(productId)
+                    if (devProduct) {
+                        return NextResponse.json(normalizeProductResponse(devProduct), {
+                            headers: {
+                                'Cache-Control': 'private, no-store'
+                            }
+                        })
+                    }
+                }
+                throw error
             }
 
-            return NextResponse.json(normalizeProductResponse(product), {
-                headers: {
-                    'Cache-Control': 'private, no-store'
+            // Try dev fallback even if database succeeded but product not found
+            if (shouldAllowDevProductFileFallback()) {
+                const devProduct = await getDevProductById(productId)
+                if (devProduct) {
+                    return NextResponse.json(normalizeProductResponse(devProduct), {
+                        headers: {
+                            'Cache-Control': 'private, no-store'
+                        }
+                    })
                 }
-            })
+            }
+
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 })
         }
 
         let products
