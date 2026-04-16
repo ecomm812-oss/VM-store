@@ -277,8 +277,12 @@ export async function GET(request) {
                 })
             }
 
-            console.log('[API] Product not found anywhere:', productId)
-            return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+            // If we get here, the product was not found anywhere
+            console.log('[API] Product not found in any source:', productId)
+            return NextResponse.json({
+                error: 'Product not found',
+                message: `Product with ID '${productId}' was not found in database, dev data, or dummy data.`
+            }, { status: 404 })
         }
 
         let products

@@ -8,7 +8,12 @@
     "build": "prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "node scripts/seed.js",
+    "db:studio": "prisma studio",
+    "db:setup": "node scripts/setup-db.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.4",
