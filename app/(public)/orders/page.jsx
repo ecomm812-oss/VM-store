@@ -5,6 +5,8 @@ import OrderItem from "@/components/OrderItem";
 import { toast } from "react-hot-toast";
 import Loading from "@/components/Loading";
 
+export const dynamic = 'force-dynamic';
+
 export default function Orders() {
 
     const [orders, setOrders] = useState([]);

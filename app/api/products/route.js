@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { productDummyData } from '@/assets/assets'
 import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
+import { normalizeProductResponse, normalizeStringArrayInput, toImageSrc } from '@/lib/product-utils'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -20,97 +21,13 @@ function listJsonResponse(payload, init = {}) {
     })
 }
 
-function normalizeStringArrayInput(value) {
-    if (Array.isArray(value)) {
-        return value
-            .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
-            .filter(Boolean)
-    }
-
-    if (typeof value === 'string') {
-        const trimmed = value.trim()
-        if (!trimmed) return []
-
-        try {
-            const parsed = JSON.parse(trimmed)
-            if (Array.isArray(parsed)) {
-                return parsed
-                    .map(item => (typeof item === 'string' ? item.trim() : String(item || '').trim()))
-                    .filter(Boolean)
-            }
-        } catch {
-            // Keep raw string as a single item when it is not JSON.
-        }
-
-        return [trimmed]
-    }
-
-    return []
-}
-
 function isMalformedArrayLiteralError(error) {
     const message = error?.message || ''
     return message.includes('malformed array literal')
 }
 
-function normalizeProductResponse(product) {
-    if (!product) return null
-
-    // Handle images - could be array of strings or already normalized
-    let images = product.images
-    if (Array.isArray(images)) {
-        images = images.filter(img => typeof img === 'string' && img.trim()).map(img => img.trim())
-    } else if (typeof images === 'string') {
-        images = normalizeStringArrayInput(images)
-    } else {
-        images = []
-    }
-
-    // Handle sizes - could be array of strings or JSON string
-    let sizes = product.sizes
-    if (Array.isArray(sizes)) {
-        sizes = sizes.filter(size => typeof size === 'string' && size.trim()).map(size => size.trim())
-    } else if (typeof sizes === 'string') {
-        sizes = normalizeStringArrayInput(sizes)
-    } else {
-        sizes = []
-    }
-
-    // Ensure rating is an array
-    const rating = Array.isArray(product.rating) ? product.rating : []
-
-    // Build normalized product
-    const normalized = {
-        ...product,
-        images,
-        sizes,
-        rating,
-        // Ensure all required fields exist with defaults
-        id: product.id || null,
-        name: product.name || 'Unknown Product',
-        description: product.description || '',
-        price: product.price ?? 0,
-        mrp: product.mrp ?? product.price ?? 0,
-        category: product.category || 'Uncategorized',
-        inStock: product.inStock !== false,
-        store: product.store || null,
-    }
-
-    return normalized
-}
-
 function createFallbackProductId() {
     return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-}
-
-function toImageSrc(value) {
-    if (typeof value === 'string') return value
-    if (value && typeof value === 'object') {
-        if (typeof value.src === 'string') return value.src
-        if (typeof value.default === 'string') return value.default
-        if (value.default && typeof value.default.src === 'string') return value.default.src
-    }
-    return null
 }
 
 function normalizeFallbackProducts(products, search, category) {
@@ -218,32 +135,20 @@ export async function GET(request) {
 
                 console.log('[API] Product not found in database:', productId)
             } catch (dbError) {
-                // Log database errors for debugging
-                console.error('[API] Product fetch error:', dbError?.message)
+                console.error('[API] Database error for product:', dbError?.message)
                 
-                // If database fails and we're in development, try fallback
-                if (shouldUseDevProductFallback(dbError) && shouldAllowDevProductFileFallback()) {
-                    console.warn('[API] Database unavailable for product details, trying dev fallback')
-                    const devProduct = await getDevProductById(productId)
-                    if (devProduct) {
-                        const normalized = normalizeProductResponse(devProduct)
-                        console.log('[API] Product found in dev fallback:', normalized?.name)
-                        return NextResponse.json(normalized, {
-                            headers: {
-                                'Cache-Control': 'private, no-store'
-                            }
-                        })
-                    }
-                }
-                
-                // If it's a database error, rethrow
-                if (shouldUseDevProductFallback(dbError)) {
+                // In development, always try fallback if database fails
+                if (isDevelopment) {
+                    console.warn('[API] Database failed in development, trying fallbacks')
+                } else if (shouldUseDevProductFallback(dbError) && shouldAllowDevProductFileFallback()) {
+                    console.warn('[API] Database unavailable, trying dev fallback')
+                } else {
+                    // In production, rethrow if not a fallback error
                     throw dbError
                 }
-                // Otherwise continue to fallback
             }
 
-            // Try dev fallback if database didn't return a product
+            // Try dev fallback
             if (shouldAllowDevProductFileFallback()) {
                 try {
                     console.log('[API] Trying dev fallback for product:', productId)
@@ -259,7 +164,6 @@ export async function GET(request) {
                     }
                 } catch (fallbackError) {
                     console.error('[API] Dev fallback error:', fallbackError?.message)
-                    // Continue to return 404
                 }
             }
 
