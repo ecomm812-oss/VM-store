@@ -14,13 +14,22 @@ export default function Product() {
         try {
             const response = await fetch(`/api/products?productId=${productId}`)
             if (!response.ok) {
+                console.warn(`[Product Page] API returned status ${response.status} for product ${productId}`)
+                const errorData = await response.json().catch(() => null)
+                console.warn('[Product Page] Error data:', errorData)
                 setProduct(null)
                 return
             }
 
             const data = await response.json()
+            if (!data || typeof data !== 'object') {
+                console.warn('[Product Page] Invalid product data received:', data)
+                setProduct(null)
+                return
+            }
             setProduct(data)
-        } catch {
+        } catch (error) {
+            console.error('[Product Page] Fetch error:', error)
             setProduct(null)
         } finally {
             setLoading(false)
@@ -78,7 +87,15 @@ export default function Product() {
 
                 {/* Description & Reviews */}
                 {product && (<ProductDescription product={product} />)}
-                {!loading && !product && <p className="text-red-500">Unable to load product details.</p>}
+                {!loading && !product && (
+                    <div className="text-center py-8">
+                        <p className="text-red-500 mb-4">Unable to load product details.</p>
+                        <p className="text-gray-500 text-sm">The product you're looking for may not exist or is currently unavailable.</p>
+                        <a href="/shop" className="text-blue-500 hover:text-blue-700 mt-4 inline-block">
+                            Back to shop
+                        </a>
+                    </div>
+                )}
             </div>
         </div>
     );

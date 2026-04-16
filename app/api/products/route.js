@@ -143,8 +143,11 @@ export async function GET(request) {
 
         // Product details view: fetch one product with full rating payload.
         if (productId) {
+            let product = null
+
+            // First, try to fetch from database
             try {
-                const product = await prisma.product.findUnique({
+                product = await prisma.product.findUnique({
                     where: { id: productId },
                     include: {
                         store: true,
@@ -171,9 +174,12 @@ export async function GET(request) {
                         }
                     })
                 }
-            } catch (error) {
+            } catch (dbError) {
+                // Log database errors for debugging
+                console.error('[API] Product fetch error:', dbError?.message)
+                
                 // If database fails and we're in development, try fallback
-                if (shouldUseDevProductFallback(error) && shouldAllowDevProductFileFallback()) {
+                if (shouldUseDevProductFallback(dbError) && shouldAllowDevProductFileFallback()) {
                     console.warn('[API] Database unavailable for product details, trying dev fallback')
                     const devProduct = await getDevProductById(productId)
                     if (devProduct) {
@@ -184,18 +190,28 @@ export async function GET(request) {
                         })
                     }
                 }
-                throw error
+                
+                // If it's a database error, rethrow
+                if (shouldUseDevProductFallback(dbError)) {
+                    throw dbError
+                }
+                // Otherwise continue to fallback
             }
 
-            // Try dev fallback even if database succeeded but product not found
+            // Try dev fallback if database didn't return a product
             if (shouldAllowDevProductFileFallback()) {
-                const devProduct = await getDevProductById(productId)
-                if (devProduct) {
-                    return NextResponse.json(normalizeProductResponse(devProduct), {
-                        headers: {
-                            'Cache-Control': 'private, no-store'
-                        }
-                    })
+                try {
+                    const devProduct = await getDevProductById(productId)
+                    if (devProduct) {
+                        return NextResponse.json(normalizeProductResponse(devProduct), {
+                            headers: {
+                                'Cache-Control': 'private, no-store'
+                            }
+                        })
+                    }
+                } catch (fallbackError) {
+                    console.error('[API] Dev fallback error:', fallbackError?.message)
+                    // Continue to return 404
                 }
             }
 
