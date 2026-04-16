@@ -241,6 +241,21 @@ export const productDummyData = [
         rating: [...dummyRatingsData,...dummyRatingsData],
         createdAt: 'Sat Jul 19 2025 14:51:25 GMT+0530 (India Standard Time)',
         updatedAt: 'Sat Jul 19 2025 14:51:25 GMT+0530 (India Standard Time)',
+    },
+    {
+        id: "cmn9y37r2000304l4t15m5589",
+        name: "Premium Wireless Headphones",
+        description: "Experience premium sound quality with our wireless headphones featuring noise cancellation, 30-hour battery life, and comfortable over-ear design. Perfect for music lovers and professionals.",
+        mrp: 299,
+        price: 199,
+        images: ["/assets/product_img4.png", "/assets/product_img5.png", "/assets/product_img6.png"],
+        category: "Headphones",
+        storeId: "seller_1",
+        inStock: true,
+        store: dummyStoreData,
+        rating: dummyRatingsData,
+        createdAt: 'Sat Jul 19 2025 14:51:25 GMT+0530 (India Standard Time)',
+        updatedAt: 'Sat Jul 19 2025 14:51:25 GMT+0530 (India Standard Time)',
     }
 ];
 
