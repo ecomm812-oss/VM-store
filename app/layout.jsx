@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 import AppInitializer from "@/components/AppInitializer";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import React from "react";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -17,25 +18,43 @@ export const metadata = {
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 const isClerkConfigured = clerkPublishableKey.startsWith('pk_');
 
-function AppShell({ children }) {
-    return (
-        <html lang="en">
-            <head suppressHydrationWarning={true} />
-            <body className={`${outfit.className} antialiased`} suppressHydrationWarning={true}>
-                <Script
-                    id="razorpay-checkout"
-                    src="https://checkout.razorpay.com/v1/checkout.js"
-                    strategy="afterInteractive"
-                />
-                <StoreProvider>
-                    <AppInitializer />
-                    <Toaster />
-                    {children}
-                </StoreProvider>
-                <Analytics />
-            </body>
-        </html>
-    );
+// ClerkProvider with error boundary
+function ClerkProviderWithErrorBoundary({ children }) {
+    const [clerkError, setClerkError] = React.useState(null);
+    
+    React.useEffect(() => {
+        // Listen for Clerk loading errors
+        const handleError = (event) => {
+            if (event.error?.code === 'failed_to_load_clerk_js') {
+                console.warn('Clerk JS failed to load, continuing without authentication');
+                setClerkError(event.error);
+            }
+        };
+        
+        window.addEventListener('error', handleError);
+        window.addEventListener('unhandledrejection', handleError);
+        
+        return () => {
+            window.removeEventListener('error', handleError);
+            window.removeEventListener('unhandledrejection', handleError);
+        };
+    }, []);
+    
+    if (clerkError) {
+        // Fallback: render without Clerk
+        return <AppShell>{children}</AppShell>;
+    }
+    
+    try {
+        return (
+            <ClerkProvider>
+                {children}
+            </ClerkProvider>
+        );
+    } catch (error) {
+        console.warn('Clerk provider failed, continuing without authentication:', error);
+        return <AppShell>{children}</AppShell>;
+    }
 }
 
 export default function RootLayout({ children }) {
@@ -44,8 +63,8 @@ export default function RootLayout({ children }) {
     }
 
     return (
-        <ClerkProvider>
+        <ClerkProviderWithErrorBoundary>
             <AppShell>{children}</AppShell>
-        </ClerkProvider>
+        </ClerkProviderWithErrorBoundary>
     );
 }
