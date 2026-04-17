@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
-import { productDummyData } from '@/assets/assets'
-import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
-import { normalizeProductResponse, normalizeStringArrayInput, toImageSrc } from '@/lib/product-utils'
-
-const isDevelopment = process.env.NODE_ENV !== 'production'
+import { createDevProduct, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
+import { normalizeProductResponse, normalizeStringArrayInput } from '@/lib/product-utils'
 
 const LIST_CACHE_HEADERS = {
     'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
@@ -28,47 +25,6 @@ function isMalformedArrayLiteralError(error) {
 
 function createFallbackProductId() {
     return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
-}
-
-function normalizeFallbackProducts(products, search, category) {
-    return products
-        .map(product => ({
-            ...product,
-            images: Array.isArray(product.images) ? product.images.map(toImageSrc).filter(Boolean) : [],
-            store: product.store ? {
-                ...product.store,
-                logo: toImageSrc(product.store.logo),
-                user: product.store.user ? {
-                    ...product.store.user,
-                    image: toImageSrc(product.store.user.image)
-                } : null
-            } : null,
-            rating: Array.isArray(product.rating)
-                ? product.rating.map(entry => ({
-                    ...entry,
-                    user: entry.user ? {
-                        ...entry.user,
-                        image: toImageSrc(entry.user.image)
-                    } : null
-                }))
-                : []
-        }))
-        .filter(product => product.images.length > 0)
-        .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
-        .filter(product => !category || product.category === category)
-}
-
-function shouldUseFallback(error) {
-    const message = error?.message || ''
-    return isDevelopment && (
-        error?.code === 'P1001' ||
-        error?.code === 'ECONNREFUSED' ||
-        message.includes('ECONNREFUSED') ||
-        message.includes('Can\'t reach database server') ||
-        message.includes('Environment variable not found: DATABASE_URL') ||
-        message.includes('Invalid `prisma.') ||
-        message.includes('error validating datasource')
-    )
 }
 
 function isProductColumnTypeMismatch(error) {
