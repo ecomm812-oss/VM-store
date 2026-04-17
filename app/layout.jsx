@@ -57,6 +57,27 @@ function ClerkProviderWithErrorBoundary({ children }) {
     }
 }
 
+function AppShell({ children }) {
+    return (
+        <html lang="en">
+            <head suppressHydrationWarning={true} />
+            <body className={`${outfit.className} antialiased`} suppressHydrationWarning={true}>
+                <Script
+                    id="razorpay-checkout"
+                    src="https://checkout.razorpay.com/v1/checkout.js"
+                    strategy="afterInteractive"
+                />
+                <StoreProvider>
+                    <AppInitializer />
+                    <Toaster />
+                    {children}
+                </StoreProvider>
+                <Analytics />
+            </body>
+        </html>
+    );
+}
+
 export default function RootLayout({ children }) {
     if (!isClerkConfigured) {
         return <AppShell>{children}</AppShell>;
