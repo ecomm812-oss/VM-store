@@ -4,6 +4,7 @@ import StoreProvider from "@/app/StoreProvider";
 import ClerkProviderWithErrorBoundary from "@/components/ClerkProviderWithErrorBoundary";
 import AppInitializer from "@/components/AppInitializer";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
 import "./globals.css";
 
@@ -34,6 +35,7 @@ function AppShell({ children }) {
                     {children}
                 </StoreProvider>
                 <Analytics />
+                <SpeedInsights />
             </body>
         </html>
     );
