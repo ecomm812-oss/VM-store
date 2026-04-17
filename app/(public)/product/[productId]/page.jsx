@@ -64,29 +64,6 @@ async function loadProduct(productId) {
         }
     }
 
-    // If we have a product ID that looks like a database ID but wasn't found,
-    // try to map it to a dummy product (for demo purposes)
-    if (productId && productId.length > 10) {
-        try {
-            const { productDummyData } = await import('@/assets/assets')
-            // Map database-style IDs to dummy products in a predictable way
-            // Use the last few characters of the ID to create a consistent index
-            const idSuffix = productId.slice(-3) // Last 3 characters
-            let indexSum = 0
-            for (let char of idSuffix) {
-                indexSum += char.charCodeAt(0)
-            }
-            const dummyIndex = indexSum % productDummyData.length
-            const mappedProduct = productDummyData[dummyIndex]
-            if (mappedProduct) {
-                console.log('[Product Page] Mapped database ID', productId, 'to dummy product:', mappedProduct.name, '(index:', dummyIndex, ')')
-                return normalizeProductResponse(mappedProduct)
-            }
-        } catch (mapError) {
-            console.error('[Product Page] Error mapping product:', mapError?.message)
-        }
-    }
-
     console.log('[Product Page] Product not found anywhere:', productId)
     return null
 }

@@ -199,27 +199,6 @@ export async function GET(request) {
                 })
             }
 
-            // For database-style IDs that don't exist, map to dummy products
-            if (productId && productId.length > 10) {
-                try {
-                    const { productDummyData } = await import('@/assets/assets')
-                    // Map database-style IDs to dummy products based on a pattern
-                    const dummyIndex = (productId.charCodeAt(0) + productId.charCodeAt(productId.length - 1)) % productDummyData.length
-                    const mappedProduct = productDummyData[dummyIndex]
-                    if (mappedProduct) {
-                        const normalized = normalizeProductResponse(mappedProduct)
-                        console.log('[API] Mapped database ID to dummy product:', normalized?.name)
-                        return NextResponse.json(normalized, {
-                            headers: {
-                                'Cache-Control': 'private, no-store'
-                            }
-                        })
-                    }
-                } catch (mapError) {
-                    console.error('[API] Error mapping product:', mapError?.message)
-                }
-            }
-
             // If we get here, the product was not found anywhere
             console.log('[API] Product not found in any source:', productId)
             return NextResponse.json({
