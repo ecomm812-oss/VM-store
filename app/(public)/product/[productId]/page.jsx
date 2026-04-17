@@ -1,15 +1,56 @@
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { prisma } from "@/lib/prisma";
-import { getDevProductById, shouldAllowDevProductFileFallback } from "@/lib/dev-product-fallback";
 import { normalizeProductResponse } from "@/lib/product-utils";
+
+function isProductColumnTypeMismatch(error) {
+    const message = error?.message || ''
+    return message.includes("Expected a string in column 'images'") ||
+        message.includes("Expected a string in column 'sizes'") ||
+        message.includes('malformed array literal') ||
+        message.includes('Expected a string in column')
+}
+
+async function loadProductFromRaw(productId) {
+    const [product] = await prisma.$queryRaw`
+        SELECT
+            p.id,
+            p.name,
+            p.description,
+            p.mrp,
+            p.price,
+            p.images,
+            p.sizes,
+            p.category,
+            p."inStock",
+            p."storeId"
+        FROM "Product" p
+        WHERE p.id = ${productId}
+    `
+
+    if (!product) return null
+
+    const parsedImages = Array.isArray(product.images) ? product.images : product.images
+    const parsedSizes = Array.isArray(product.sizes) ? product.sizes : product.sizes
+
+    let store = null
+    if (product.storeId) {
+        store = await prisma.store.findUnique({ where: { id: product.storeId } })
+    }
+
+    return normalizeProductResponse({
+        ...product,
+        images: parsedImages,
+        sizes: parsedSizes,
+        store
+    })
+}
 
 async function loadProduct(productId) {
     if (!productId) return null
 
     console.log('[Product Page] Loading product:', productId)
 
-    // Always try database first (even in development) to maintain consistency with home page
     try {
         const product = await prisma.product.findUnique({
             where: { id: productId },
@@ -37,34 +78,17 @@ async function loadProduct(productId) {
         }
     } catch (error) {
         console.error('[Product Page] Database query failed:', error?.message)
-    }
-
-    // Try dummy data as fallback
-    try {
-        const { productDummyData } = await import('@/assets/assets')
-        const dummyProduct = productDummyData.find(p => p.id === productId)
-        if (dummyProduct) {
-            console.log('[Product Page] Found product in dummy data:', dummyProduct.name)
-            return normalizeProductResponse(dummyProduct)
-        }
-    } catch (dummyError) {
-        console.error('[Product Page] Error loading dummy data:', dummyError?.message)
-    }
-
-    // Try dev file fallback
-    if (shouldAllowDevProductFileFallback()) {
-        try {
-            const devProduct = await getDevProductById(productId)
-            if (devProduct) {
-                console.log('[Product Page] Found product in dev fallback:', devProduct.name)
-                return normalizeProductResponse(devProduct)
+        if (isProductColumnTypeMismatch(error)) {
+            console.log('[Product Page] Attempting raw fallback for product:', productId)
+            const fallbackProduct = await loadProductFromRaw(productId)
+            if (fallbackProduct) {
+                console.log('[Product Page] Loaded product via raw fallback:', fallbackProduct.name)
+                return fallbackProduct
             }
-        } catch (devError) {
-            console.error('[Product Page] Dev fallback failed:', devError?.message)
         }
     }
 
-    console.log('[Product Page] Product not found anywhere:', productId)
+    console.log('[Product Page] Product not found in database:', productId)
     return null
 }
 

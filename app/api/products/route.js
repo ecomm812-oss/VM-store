@@ -100,23 +100,6 @@ export async function GET(request) {
         if (productId) {
             console.log('[API] Fetching product:', productId)
 
-            // Always try dummy data first as primary fallback
-            try {
-                const { productDummyData } = await import('@/assets/assets')
-                const dummyProduct = productDummyData.find(p => p.id === productId)
-                if (dummyProduct) {
-                    const normalized = normalizeProductResponse(dummyProduct)
-                    console.log('[API] Product found in dummy data:', normalized?.name)
-                    return NextResponse.json(normalized, {
-                        headers: {
-                            'Cache-Control': 'private, no-store'
-                        }
-                    })
-                }
-            } catch (dummyError) {
-                console.error('[API] Error loading dummy data:', dummyError?.message)
-            }
-
             let product = null
 
             // First, try to fetch from database
@@ -154,56 +137,13 @@ export async function GET(request) {
                 console.log('[API] Product not found in database:', productId)
             } catch (dbError) {
                 console.error('[API] Database error for product:', dbError?.message)
-                
-                // In development, always try fallback if database fails
-                if (isDevelopment) {
-                    console.warn('[API] Database failed in development, trying fallbacks')
-                } else if (shouldUseDevProductFallback(dbError) && shouldAllowDevProductFileFallback()) {
-                    console.warn('[API] Database unavailable, trying dev fallback')
-                } else {
-                    // In production, rethrow if not a fallback error
-                    throw dbError
-                }
             }
 
-            // Try dev fallback
-            if (shouldAllowDevProductFileFallback()) {
-                try {
-                    console.log('[API] Trying dev fallback for product:', productId)
-                    const devProduct = await getDevProductById(productId)
-                    if (devProduct) {
-                        const normalized = normalizeProductResponse(devProduct)
-                        console.log('[API] Product found in dev fallback:', normalized?.name)
-                        return NextResponse.json(normalized, {
-                            headers: {
-                                'Cache-Control': 'private, no-store'
-                            }
-                        })
-                    }
-                } catch (fallbackError) {
-                    console.error('[API] Dev fallback error:', fallbackError?.message)
-                }
-            }
-
-            // Try dummy data as last resort
-            console.log('[API] Trying dummy data fallback for product:', productId)
-            const { productDummyData } = await import('@/assets/assets')
-            const dummyProduct = productDummyData.find(p => p.id === productId)
-            if (dummyProduct) {
-                const normalized = normalizeProductResponse(dummyProduct)
-                console.log('[API] Product found in dummy data:', normalized?.name)
-                return NextResponse.json(normalized, {
-                    headers: {
-                        'Cache-Control': 'private, no-store'
-                    }
-                })
-            }
-
-            // If we get here, the product was not found anywhere
+            // Only return real database products for product detail requests.
             console.log('[API] Product not found in any source:', productId)
             return NextResponse.json({
                 error: 'Product not found',
-                message: `Product with ID '${productId}' was not found in database, dev data, or dummy data.`
+                message: `Product with ID '${productId}' was not found in database.`
             }, { status: 404 })
         }
 
@@ -321,52 +261,9 @@ export async function GET(request) {
             console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
         }
 
-        // If no valid products found and fallback is allowed, return dummy data
-        if (validProducts.length === 0 && shouldAllowDevProductFileFallback()) {
-            console.warn('[API] No valid products from database, using fallback data')
-            const [dummyProducts, devProducts] = await Promise.all([
-                normalizeFallbackProducts(productDummyData, search, category),
-                getPublicDevProducts({ search: search || '', category: category || '' })
-            ])
-            return listJsonResponse([...devProducts, ...dummyProducts])
-        }
-
         return listJsonResponse(validProducts)
     } catch (error) {
-        const { searchParams } = new URL(request.url)
-        const search = searchParams.get('search')
-        const category = searchParams.get('category')
-
         console.error('[API] Error fetching products:', error?.message)
-
-        // Try fallback if database is unavailable
-        if (shouldUseFallback(error) && shouldAllowDevProductFileFallback()) {
-            console.warn('[API] Database unavailable in development, serving fallback products')
-            try {
-                const [dummyProducts, devProducts] = await Promise.all([
-                    normalizeFallbackProducts(productDummyData, search, category),
-                    getPublicDevProducts({ search: search || '', category: category || '' })
-                ])
-                return listJsonResponse([...devProducts, ...dummyProducts])
-            } catch (fallbackError) {
-                console.error('[API] Fallback failed:', fallbackError?.message)
-            }
-        }
-
-        // If development mode, always return dummy data as last resort
-        if (isDevelopment) {
-            console.warn('[API] Error fetching products, using development fallback')
-            try {
-                const [dummyProducts, devProducts] = await Promise.all([
-                    normalizeFallbackProducts(productDummyData, search, category),
-                    getPublicDevProducts({ search: search || '', category: category || '' })
-                ])
-                return listJsonResponse([...devProducts, ...dummyProducts])
-            } catch (fallbackError) {
-                console.error('[API] Development fallback also failed:', fallbackError?.message)
-            }
-        }
-
         return NextResponse.json({ error: error?.message || 'Failed to fetch products' }, { status: 500 })
     }
 }

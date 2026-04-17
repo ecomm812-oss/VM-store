@@ -84,35 +84,7 @@ export async function GET(request, { params }) {
             products: parsedProducts
         })
     } catch (error) {
-        if (shouldUseDevStoreFallback(error) || shouldUseDevProductFallback(error)) {
-            if (!username) {
-                return NextResponse.json({ error: 'Username is required' }, { status: 400 })
-            }
-
-            const devStore = await getDevStoreByUsername(username)
-            if (devStore) {
-                const products = await getDevProductsByStoreId(devStore.id)
-                return NextResponse.json({ store: devStore, products })
-            }
-
-            if (username.toLowerCase() === dummyStoreData.username.toLowerCase()) {
-                return NextResponse.json({
-                    store: {
-                        ...dummyStoreData,
-                        logo: toImageSrc(dummyStoreData.logo),
-                        user: dummyStoreData.user ? {
-                            ...dummyStoreData.user,
-                            image: toImageSrc(dummyStoreData.user.image)
-                        } : null
-                    },
-                    products: normalizeFallbackProducts(productDummyData)
-                })
-            }
-
-            return NextResponse.json({ error: 'Store not found' }, { status: 404 })
-        }
-
         console.error('Store shop error:', error)
-        return NextResponse.json({ error: error.message }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Failed to fetch store products' }, { status: 500 })
     }
 }
