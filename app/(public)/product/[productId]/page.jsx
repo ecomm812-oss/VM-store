@@ -9,20 +9,7 @@ async function loadProduct(productId) {
 
     console.log('[Product Page] Loading product:', productId)
 
-    // Always try dummy data first as primary fallback
-    try {
-        const { productDummyData } = await import('@/assets/assets')
-        const dummyProduct = productDummyData.find(p => p.id === productId)
-        if (dummyProduct) {
-            console.log('[Product Page] Found product in dummy data:', dummyProduct.name)
-            return normalizeProductResponse(dummyProduct)
-        }
-        console.log('[Product Page] Product not found in dummy data, trying other sources')
-    } catch (dummyError) {
-        console.error('[Product Page] Error loading dummy data:', dummyError?.message)
-    }
-
-    // Try database if available
+    // Always try database first (even in development) to maintain consistency with home page
     try {
         const product = await prisma.product.findUnique({
             where: { id: productId },
@@ -52,6 +39,18 @@ async function loadProduct(productId) {
         console.error('[Product Page] Database query failed:', error?.message)
     }
 
+    // Try dummy data as fallback
+    try {
+        const { productDummyData } = await import('@/assets/assets')
+        const dummyProduct = productDummyData.find(p => p.id === productId)
+        if (dummyProduct) {
+            console.log('[Product Page] Found product in dummy data:', dummyProduct.name)
+            return normalizeProductResponse(dummyProduct)
+        }
+    } catch (dummyError) {
+        console.error('[Product Page] Error loading dummy data:', dummyError?.message)
+    }
+
     // Try dev file fallback
     if (shouldAllowDevProductFileFallback()) {
         try {
@@ -70,11 +69,17 @@ async function loadProduct(productId) {
     if (productId && productId.length > 10) {
         try {
             const { productDummyData } = await import('@/assets/assets')
-            // Map database-style IDs to dummy products based on a pattern
-            const dummyIndex = (productId.charCodeAt(0) + productId.charCodeAt(productId.length - 1)) % productDummyData.length
+            // Map database-style IDs to dummy products in a predictable way
+            // Use the last few characters of the ID to create a consistent index
+            const idSuffix = productId.slice(-3) // Last 3 characters
+            let indexSum = 0
+            for (let char of idSuffix) {
+                indexSum += char.charCodeAt(0)
+            }
+            const dummyIndex = indexSum % productDummyData.length
             const mappedProduct = productDummyData[dummyIndex]
             if (mappedProduct) {
-                console.log('[Product Page] Mapped to dummy product:', mappedProduct.name)
+                console.log('[Product Page] Mapped database ID', productId, 'to dummy product:', mappedProduct.name, '(index:', dummyIndex, ')')
                 return normalizeProductResponse(mappedProduct)
             }
         } catch (mapError) {
@@ -87,9 +92,13 @@ async function loadProduct(productId) {
 }
 
 export default async function Product({ params }) {
-    const product = await loadProduct(params.productId)
+    const productId = params.productId
+    console.log('[Product Page] Loading product with ID:', productId)
+
+    const product = await loadProduct(productId)
 
     if (!product) {
+        console.error('[Product Page] No product found for ID:', productId)
         return (
             <div className="mx-6">
                 <div className="max-w-7xl mx-auto text-center py-24">
@@ -102,6 +111,8 @@ export default async function Product({ params }) {
             </div>
         )
     }
+
+    console.log('[Product Page] Successfully loaded product:', product.name, 'with ID:', product.id)
 
     return (
         <div className="mx-6">
