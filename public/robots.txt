@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Block access to admin areas
+Disallow: /admin/
+Disallow: /api/admin/
+
+# Block access to store management areas
+Disallow: /store/
+
+# Allow access to public pages
+Allow: /
+Allow: /shop
+Allow: /cart
+Allow: /orders
+Allow: /pricing
+
+# Sitemap
+Sitemap: https://vmcart.com/sitemap.xml

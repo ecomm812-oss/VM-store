@@ -1,0 +1,20 @@
+{
+  "stores": [
+    {
+      "id": "dev_store_1775989945290",
+      "userId": "dev_user_dev_user",
+      "clerkId": "dev_user",
+      "name": "hbfgcgfzA",
+      "username": "njhbgva",
+      "description": "1234567",
+      "address": "asdfghjk",
+      "status": "rejected",
+      "isActive": false,
+      "logo": "/uploads/b814dfac-b2c4-471c-a2e5-0caabb84cc94.webp",
+      "email": "welop45420@kobace.com",
+      "contact": "1234567890",
+      "createdAt": "2026-04-12T10:32:25.290Z",
+      "updatedAt": "2026-04-12T10:39:01.459Z"
+    }
+  ]
+}

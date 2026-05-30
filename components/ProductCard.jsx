@@ -1,0 +1,48 @@
+'use client'
+import { StarIcon } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+import React from 'react'
+
+const ProductCard = ({ product }) => {
+
+    const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
+
+    // Validate product data
+    if (!product || !product.id || !product.name || !product.images || product.images.length === 0) {
+        return null; // Don't render invalid products
+    }
+
+    const ratingCount = typeof product.ratingCount === 'number'
+        ? product.ratingCount
+        : (Array.isArray(product.rating) ? product.rating.length : 0)
+
+    // calculate average rating from precomputed value when available.
+    const rating = typeof product.averageRating === 'number'
+        ? Math.round(product.averageRating)
+        : (Array.isArray(product.rating) && product.rating.length > 0
+            ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
+            : 0)
+
+    return (
+        <Link href={`/product/${product.id}`} className='group max-xl:mx-auto animate-fadeInUp stagger-item'>
+            <div className='bg-[#F5F5F5] h-40 sm:w-60 sm:h-68 rounded-lg flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:bg-white card-animate'>
+                <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' src={product.images[0]} alt="" />
+            </div>
+            <div className='flex justify-between gap-3 text-sm text-slate-800 pt-2 max-w-60 transition-all duration-300'>
+                <div className='transition-all duration-300 group-hover:text-slate-900'>
+                    <p className='font-medium'>{product.name}</p>
+                    <div className='flex gap-0.5'>
+                        {Array(5).fill('').map((_, index) => (
+                            <StarIcon key={index} size={14} className='text-transparent transition-transform duration-300 group-hover:scale-110' fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
+                        ))}
+                    </div>
+                    <p className='text-xs text-slate-500 mt-1'>{ratingCount} reviews</p>
+                </div>
+                <p className='font-semibold transition-colors duration-300 group-hover:text-green-600'>{currency}{product.price}</p>
+            </div>
+        </Link>
+    )
+}
+
+export default ProductCard
