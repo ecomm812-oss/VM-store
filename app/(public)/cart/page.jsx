@@ -25,7 +25,7 @@ export default function Cart() {
     const [totalPrice, setTotalPrice] = useState(0);
 
     const createCartArray = () => {
-        setTotalPrice(0);
+        let total = 0;
         const cartArray = [];
         for (const [key, value] of Object.entries(cartItems)) {
             // Split from the end to handle hyphens in keys
@@ -42,10 +42,11 @@ export default function Cart() {
                     quantity: value,
                     selectedSize: selectedSize,
                 });
-                setTotalPrice(prev => prev + product.price * value);
+                total += product.price * value;
             }
         }
         setCartArray(cartArray);
+        setTotalPrice(total);
     }
 
     const handleDeleteItemFromCart = (productId, selectedSize) => {

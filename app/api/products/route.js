@@ -264,6 +264,15 @@ export async function GET(request) {
         return listJsonResponse(validProducts)
     } catch (error) {
         console.error('[API] Error fetching products:', error?.message)
+        if (shouldUseDevProductFallback(error)) {
+            try {
+                const fallbackProducts = await getPublicDevProducts({ search: search || '', category: category || '' })
+                console.warn('[API] Using development product fallback due to database error')
+                return listJsonResponse(normalizeFallbackProducts(fallbackProducts, search, category))
+            } catch (fallbackError) {
+                console.error('[API] Dev fallback error:', fallbackError?.message)
+            }
+        }
         return NextResponse.json({ error: error?.message || 'Failed to fetch products' }, { status: 500 })
     }
 }
