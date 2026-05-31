@@ -26,8 +26,8 @@ const ProductCard = ({ product }) => {
 
     return (
         <Link href={`/product/${product.id}`} className='group max-xl:mx-auto animate-fadeInUp stagger-item'>
-            <div className='bg-[#F5F5F5] h-40 sm:w-60 sm:h-68 rounded-lg flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:bg-white card-animate'>
-                <Image width={500} height={500} className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' src={product.images[0]} alt="" />
+                <div className='bg-[#F5F5F5] h-40 sm:w-60 sm:h-68 rounded-lg flex items-center justify-center overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:bg-white card-animate'>
+                <Image width={300} height={300} sizes="(max-width: 640px) 150px, 300px" className='max-h-30 sm:max-h-40 w-auto group-hover:scale-115 transition duration-300' src={product.images[0]} alt="" />
             </div>
             <div className='flex justify-between gap-3 text-sm text-slate-800 pt-2 max-w-60 transition-all duration-300'>
                 <div className='transition-all duration-300 group-hover:text-slate-900'>

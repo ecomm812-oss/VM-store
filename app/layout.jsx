@@ -1,7 +1,7 @@
 import { Outfit } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
-import { ClerkProvider } from '@clerk/nextjs';
+import ClientClerkProvider from "@/components/ClientClerkProvider";
 import AppInitializer from "@/components/AppInitializer";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
@@ -17,7 +17,7 @@ export const metadata = {
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 const isClerkConfigured = clerkPublishableKey.startsWith('pk_');
 
-function AppShell({ children }) {
+export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <head suppressHydrationWarning={true} />
@@ -30,22 +30,16 @@ function AppShell({ children }) {
                 <StoreProvider>
                     <AppInitializer />
                     <Toaster />
-                    {children}
+                    {isClerkConfigured ? (
+                        <ClientClerkProvider publishableKey={clerkPublishableKey}>
+                            {children}
+                        </ClientClerkProvider>
+                    ) : (
+                        children
+                    )}
                 </StoreProvider>
                 <Analytics />
             </body>
         </html>
-    );
-}
-
-export default function RootLayout({ children }) {
-    if (!isClerkConfigured) {
-        return <AppShell>{children}</AppShell>;
-    }
-
-    return (
-        <ClerkProvider>
-            <AppShell>{children}</AppShell>
-        </ClerkProvider>
     );
 }

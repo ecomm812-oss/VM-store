@@ -1,29 +1,19 @@
-'use client'
-import React, { useMemo } from 'react'
 import Title from './Title'
 import ProductCard from './ProductCard'
-import { useSelector } from 'react-redux'
 
-const LatestProducts = () => {
-
+const LatestProducts = ({ products = [] }) => {
     const displayQuantity = 4
-    const products = useSelector(state => state.product.list)
-    const latestProducts = useMemo(
-        () => products
-            .slice()
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, displayQuantity),
-        [products]
-    )
+    const latestProducts = products.slice(0, displayQuantity)
+    const visibleCount = Math.min(latestProducts.length, products.length)
 
     return (
         <div className='px-6 my-30 max-w-6xl mx-auto animate-fadeInUp'>
             <div className='animate-slideInUp'>
-                <Title title='Latest Products' description={`Showing ${products.length < displayQuantity ? products.length : displayQuantity} of ${products.length} products`} href='/shop' />
+                <Title title='Latest Products' description={`Showing ${visibleCount} of ${products.length} products`} href='/shop' />
             </div>
             <div className='mt-12 grid grid-cols-2 sm:flex flex-wrap gap-6 justify-between'>
-                {latestProducts.map((product, index) => (
-                    <ProductCard key={index} product={product} />
+                {latestProducts.map((product) => (
+                    <ProductCard key={product.id} product={product} />
                 ))}
             </div>
         </div>

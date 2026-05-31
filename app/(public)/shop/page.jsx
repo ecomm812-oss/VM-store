@@ -1,62 +1,69 @@
-'use client'
-import { Suspense } from "react"
-import ProductCard from "@/components/ProductCard"
-import { MoveLeftIcon } from "lucide-react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useSelector } from "react-redux"
-import Loading from "@/components/Loading"
+import Link from 'next/link'
+import ProductCard from '@/components/ProductCard'
+import { getPublicShopProducts, countPublicShopProducts } from '@/lib/product-service'
 
- function ShopContent() {
+export const revalidate = 300
 
-    // get query params ?search=abc or ?category=Headphones
-    const searchParams = useSearchParams()
-    const search = searchParams.get('search')
-    const category = searchParams.get('category')
-    const router = useRouter()
+export default async function Shop({ searchParams }) {
+    const resolvedParams = await searchParams
+    const search = resolvedParams?.search?.trim() || ''
+    const category = resolvedParams?.category?.trim() || ''
 
-    const products = useSelector(state => state.product.list)
-    const productsLoading = useSelector(state => state.product.loading)
-    const productsError = useSelector(state => state.product.error)
+    const page = Math.max(1, parseInt(resolvedParams?.page || '1', 10) || 1)
+    const pageSize = 24
+    const skip = (page - 1) * pageSize
 
-    const normalizedCategory = category?.trim().toLowerCase()
+    const [products, totalCount] = await Promise.all([
+        getPublicShopProducts({
+            search: search || undefined,
+            category: category || undefined,
+            take: pageSize,
+            skip
+        }),
+        countPublicShopProducts({
+            search: search || undefined,
+            category: category || undefined
+        })
+    ])
 
-    const filteredProducts = products.filter(product => {
-        const matchesSearch = !search || product.name.toLowerCase().includes(search.toLowerCase());
-        const matchesCategory = !normalizedCategory || product.category.toLowerCase() === normalizedCategory;
-        return matchesSearch && matchesCategory;
-    });
+    const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
 
-    const displayTitle = category ? category : (search ? `Search: ${search}` : 'All');
+    const displayTitle = category || (search ? `Search: ${search}` : 'All')
 
     return (
         <div className="min-h-[70vh] mx-6">
-            <div className=" max-w-7xl mx-auto">
-                <h1 onClick={() => router.push('/shop')} className="text-2xl text-slate-500 my-6 flex items-center gap-2 cursor-pointer"> {(search || category) && <MoveLeftIcon size={20} />}  {displayTitle} <span className="text-slate-700 font-medium">Products</span></h1>
-                <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-32">
-                    {productsLoading ? (
-                        <div className="col-span-full w-full">
-                            <Loading />
-                        </div>
-                    ) : productsError ? (
-                        <p className="text-red-500 col-span-full">Unable to load products right now. Please refresh and try again.</p>
-                    ) : filteredProducts.length > 0 ? (
-                        filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)
+            <div className="max-w-7xl mx-auto">
+                <h1 className="text-2xl text-slate-500 my-6 flex items-center gap-2">
+                    {search || category ? (
+                        <Link href="/shop" className="text-slate-500 hover:text-slate-700 transition">
+                            ←
+                        </Link>
+                    ) : null}
+                    {displayTitle} <span className="text-slate-700 font-medium">Products</span>
+                </h1>
+                <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-6">
+                    {products.length > 0 ? (
+                        products.map((product) => <ProductCard key={product.id} product={product} />)
                     ) : (
                         <p className="text-slate-500 col-span-full">
                             {category ? 'No products found in this category.' : search ? 'No products found for this search.' : 'No products available right now.'}
                         </p>
                     )}
                 </div>
+                <div className="flex justify-between items-center max-w-7xl mx-auto mb-32 mt-4">
+                    <div>
+                        {page > 1 ? (
+                            <Link href={`/shop?page=${page - 1}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`} className="text-slate-500 hover:text-slate-700">← Prev</Link>
+                        ) : null}
+                    </div>
+                    <div className="text-sm text-slate-600">Page {page} of {totalPages} ({totalCount || 0} products)</div>
+                    <div>
+                        {page < totalPages ? (
+                            <Link href={`/shop?page=${page + 1}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`} className="text-slate-500 hover:text-slate-700">Next →</Link>
+                        ) : null}
+                    </div>
+                </div>
             </div>
         </div>
     )
-}
-
-
-export default function Shop() {
-  return (
-    <Suspense fallback={<div>Loading shop...</div>}>
-      <ShopContent />
-    </Suspense>
-  );
 }

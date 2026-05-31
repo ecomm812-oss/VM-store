@@ -2,6 +2,7 @@ import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { prisma } from "@/lib/prisma";
 import { normalizeProductResponse } from "@/lib/product-utils";
+import { getDevProductById, shouldUseDevProductFallback } from "@/lib/dev-product-fallback";
 
 function isProductColumnTypeMismatch(error) {
     const message = error?.message || ''
@@ -86,9 +87,24 @@ async function loadProduct(productId) {
                 return fallbackProduct
             }
         }
+
+        if (shouldUseDevProductFallback(error)) {
+            console.log('[Product Page] Database unavailable - loading product from dev fallback:', productId)
+            const devProduct = await getDevProductById(productId)
+            if (devProduct) {
+                console.log('[Product Page] Loaded product from dev fallback:', devProduct.name)
+                return devProduct
+            }
+        }
     }
 
     console.log('[Product Page] Product not found in database:', productId)
+    const devProduct = await getDevProductById(productId)
+    if (devProduct) {
+        console.log('[Product Page] Loaded product from dev fallback after DB miss:', devProduct.name)
+        return devProduct
+    }
+
     return null
 }
 
