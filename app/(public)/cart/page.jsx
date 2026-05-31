@@ -28,13 +28,19 @@ export default function Cart() {
         setTotalPrice(0);
         const cartArray = [];
         for (const [key, value] of Object.entries(cartItems)) {
-            const [productId, selectedSize] = key.split('-');
+            // Split from the end to handle hyphens in keys
+            const lastHyphenIndex = key.lastIndexOf('-');
+            if (lastHyphenIndex === -1) continue;
+            
+            const productId = key.substring(0, lastHyphenIndex);
+            const selectedSize = key.substring(lastHyphenIndex + 1) || 'One Size';
+            
             const product = products.find(product => product.id === productId);
             if (product) {
                 cartArray.push({
                     ...product,
                     quantity: value,
-                    selectedSize: selectedSize || 'One Size',
+                    selectedSize: selectedSize,
                 });
                 setTotalPrice(prev => prev + product.price * value);
             }
@@ -47,9 +53,7 @@ export default function Cart() {
     }
 
     useEffect(() => {
-        if (products.length > 0) {
-            createCartArray();
-        }
+        createCartArray();
     }, [cartItems, products]);
 
     return cartArray.length > 0 ? (
