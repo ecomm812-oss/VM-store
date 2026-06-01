@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
-import { productDummyData } from '@/assets/assets'
-import { createDevProduct, getPublicDevProducts, shouldAllowDevProductFileFallback, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
-import { normalizeProductResponse, normalizeStringArrayInput, toImageSrc } from '@/lib/product-utils'
+import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
+import { normalizeProductResponse, toImageSrc } from '@/lib/product-utils'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -30,46 +29,7 @@ function createFallbackProductId() {
     return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
-function normalizeFallbackProducts(products, search, category) {
-    return products
-        .map(product => ({
-            ...product,
-            images: Array.isArray(product.images) ? product.images.map(toImageSrc).filter(Boolean) : [],
-            store: product.store ? {
-                ...product.store,
-                logo: toImageSrc(product.store.logo),
-                user: product.store.user ? {
-                    ...product.store.user,
-                    image: toImageSrc(product.store.user.image)
-                } : null
-            } : null,
-            rating: Array.isArray(product.rating)
-                ? product.rating.map(entry => ({
-                    ...entry,
-                    user: entry.user ? {
-                        ...entry.user,
-                        image: toImageSrc(entry.user.image)
-                    } : null
-                }))
-                : []
-        }))
-        .filter(product => product.images.length > 0)
-        .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
-        .filter(product => !category || product.category === category)
-}
 
-function shouldUseFallback(error) {
-    const message = error?.message || ''
-    return isDevelopment && (
-        error?.code === 'P1001' ||
-        error?.code === 'ECONNREFUSED' ||
-        message.includes('ECONNREFUSED') ||
-        message.includes('Can\'t reach database server') ||
-        message.includes('Environment variable not found: DATABASE_URL') ||
-        message.includes('Invalid `prisma.') ||
-        message.includes('error validating datasource')
-    )
-}
 
 function isProductColumnTypeMismatch(error) {
     const message = error?.message || ''
@@ -139,7 +99,22 @@ export async function GET(request) {
                 console.error('[API] Database error for product:', dbError?.message)
             }
 
-            // Only return real database products for product detail requests.
+            if (isDevelopment) {
+                try {
+                    const devProduct = await getDevProductById(productId)
+                    if (devProduct) {
+                        console.log('[API] Returning dev fallback product for:', productId)
+                        return NextResponse.json(devProduct, {
+                            headers: {
+                                'Cache-Control': 'private, no-store'
+                            }
+                        })
+                    }
+                } catch (devError) {
+                    console.error('[API] Dev fallback error fetching product:', devError?.message)
+                }
+            }
+
             console.log('[API] Product not found in any source:', productId)
             return NextResponse.json({
                 error: 'Product not found',
