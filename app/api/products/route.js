@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
-import { normalizeProductResponse, toImageSrc } from '@/lib/product-utils'
+import { normalizeProductResponse } from '@/lib/product-utils'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
