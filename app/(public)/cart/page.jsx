@@ -3,6 +3,7 @@ import Counter from "@/components/Counter";
 import OrderSummary from "@/components/OrderSummary";
 import PageTitle from "@/components/PageTitle";
 import { deleteItemFromCart } from "@/lib/features/cart/cartSlice";
+import { fetchProducts } from "@/lib/features/product/productSlice";
 import { Trash2Icon } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -18,11 +19,14 @@ export default function Cart() {
     
     const { cartItems } = useSelector(state => state.cart);
     const products = useSelector(state => state.product.list);
+    const productLoading = useSelector(state => state.product.loading);
 
     const dispatch = useDispatch();
 
     const [cartArray, setCartArray] = useState([]);
     const [totalPrice, setTotalPrice] = useState(0);
+    const [missingProducts, setMissingProducts] = useState({});
+    const [missingFetchPending, setMissingFetchPending] = useState(false);
 
     const createCartArray = () => {
         let total = 0;
@@ -35,10 +39,11 @@ export default function Cart() {
             const productId = key.substring(0, lastHyphenIndex);
             const selectedSize = key.substring(lastHyphenIndex + 1) || 'One Size';
             
-            const product = products.find(product => product.id === productId);
+            const product = products.find(product => product.id === productId) || missingProducts[productId];
             if (product) {
                 cartArray.push({
                     ...product,
+                    storeId: product.storeId || product.store?.id,
                     quantity: value,
                     selectedSize: selectedSize,
                 });
@@ -54,10 +59,66 @@ export default function Cart() {
     }
 
     useEffect(() => {
-        createCartArray();
-    }, [cartItems, products]);
+        if (Object.keys(cartItems).length > 0 && products.length === 0 && !productLoading) {
+            dispatch(fetchProducts())
+        }
+    }, [cartItems, products.length, productLoading, dispatch])
 
-    return cartArray.length > 0 ? (
+    useEffect(() => {
+        const missingIds = Object.entries(cartItems).reduce((ids, [key]) => {
+            const lastHyphenIndex = key.lastIndexOf('-')
+            if (lastHyphenIndex === -1) return ids
+
+            const productId = key.substring(0, lastHyphenIndex)
+            if (!products.some(product => product.id === productId) && !missingProducts[productId]) {
+                ids.add(productId)
+            }
+            return ids
+        }, new Set())
+
+        if (missingIds.size === 0) {
+            return
+        }
+
+        const fetchMissingProducts = async () => {
+            setMissingFetchPending(true)
+            const fetched = {}
+
+            await Promise.all([...missingIds].map(async (productId) => {
+                try {
+                    const response = await fetch(`/api/products?productId=${encodeURIComponent(productId)}`)
+                    if (!response.ok) return
+                    const product = await response.json()
+                    if (product?.id) {
+                        fetched[productId] = product
+                    }
+                } catch (error) {
+                    // Ignore individual failures; the cart will still update if other products resolve.
+                }
+            }))
+
+            if (Object.keys(fetched).length > 0) {
+                setMissingProducts(prev => ({ ...prev, ...fetched }))
+            }
+
+            setMissingFetchPending(false)
+        }
+
+        fetchMissingProducts()
+    }, [cartItems, products, missingProducts])
+
+    useEffect(() => {
+        createCartArray();
+    }, [cartItems, products, missingProducts]);
+
+    const hasCartItems = Object.keys(cartItems).length > 0
+    const isLoadingCart = hasCartItems && cartArray.length === 0 && (productLoading || missingFetchPending)
+
+    return isLoadingCart ? (
+        <div className="min-h-[80vh] mx-6 flex items-center justify-center text-slate-400">
+            <h1 className="text-2xl sm:text-4xl font-semibold">Loading your cart...</h1>
+        </div>
+    ) : cartArray.length > 0 ? (
         <div className="min-h-screen mx-6 text-slate-800">
 
             <div className="max-w-7xl mx-auto ">

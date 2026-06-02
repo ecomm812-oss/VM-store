@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
 import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
-import { normalizeProductResponse } from '@/lib/product-utils'
+import { normalizeProductResponse, normalizeStringArrayInput } from '@/lib/product-utils'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
@@ -124,21 +124,18 @@ export async function GET(request) {
 
         let products
         try {
+            console.log('[API] Starting product fetch with params:', { search, category })
             products = await prisma.product.findMany({
                 where: {
                     ...where,
                     inStock: true
                 },
-                select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                    mrp: true,
-                    price: true,
-                    images: true,
-                    sizes: true,
-                    category: true,
-                    createdAt: true,
+                include: {
+                    store: {
+                        select: {
+                            id: true
+                        }
+                    },
                     _count: {
                         select: {
                             rating: true
@@ -146,11 +143,23 @@ export async function GET(request) {
                     }
                 }
             })
+            
+            // Transform to flat structure with storeId
+            products = products.map(p => ({
+                ...p,
+                storeId: p.store?.id || p.storeId || null,
+                store: undefined
+            }))
+            
+            console.log('[API] Successfully fetched', products.length, 'products from database')
         } catch (queryError) {
+            console.error('[API] Query error in findMany:', queryError?.message)
             if (!isProductColumnTypeMismatch(queryError)) {
                 throw queryError
             }
 
+            // Fallback to raw query if Prisma has type issues
+            console.log('[API] Using raw SQL fallback due to type mismatch')
             const rawProducts = await prisma.$queryRaw`
                 SELECT
                     p."id",
@@ -161,6 +170,7 @@ export async function GET(request) {
                     p."images",
                     p."sizes",
                     p."category",
+                    p."storeId",
                     p."createdAt",
                     COUNT(r."id")::int AS "ratingCount"
                 FROM "Product" p
@@ -175,9 +185,11 @@ export async function GET(request) {
                     p."images",
                     p."sizes",
                     p."category",
+                    p."storeId",
                     p."createdAt"
                 ORDER BY p."createdAt" DESC
             `
+            console.log('[API] Raw query returned', rawProducts.length, 'products')
 
             products = rawProducts
                 .map((product) => ({
@@ -189,6 +201,7 @@ export async function GET(request) {
                     images: product.images,
                     sizes: product.sizes,
                     category: product.category,
+                    storeId: product.storeId,
                     createdAt: product.createdAt,
                     _count: {
                         rating: product.ratingCount || 0
@@ -196,9 +209,11 @@ export async function GET(request) {
                 }))
                 .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
                 .filter(product => !category || product.category === category)
+            console.log('[API] Mapped to', products.length, 'products after filtering')
         }
 
         // Parse JSON fields safely and normalize legacy image shapes.
+        console.log('[API] Starting normalization of', products.length, 'products')
         const validProducts = products
             .map(product => {
                 try {
@@ -207,13 +222,7 @@ export async function GET(request) {
 
                     const normalizedImages = Array.isArray(parsedImages)
                         ? parsedImages
-                            .map(image => {
-                                if (typeof image === 'string') return image
-                                if (image && typeof image === 'object') {
-                                    return image.src || image.url || null
-                                }
-                                return null
-                            })
+                            .map(image => toImageSrc(image))
                             .filter(Boolean)
                         : []
 
@@ -226,29 +235,42 @@ export async function GET(request) {
                         averageRating: 0
                     }
                 } catch (error) {
-                    console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error)
+                    console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error?.message)
                     return null
                 }
             })
-            .filter(product => product && product.id && product.name && product.price !== undefined && product.images.length > 0)
+            .filter(product => product && product.id && product.name && product.price !== undefined)
 
+        console.log('[API] Normalized to', validProducts.length, 'valid products')
         if (validProducts.length < products.length) {
             console.warn(`[API] Filtered out ${products.length - validProducts.length} invalid products`)
         }
 
+        console.log('[API] Returning response with', validProducts.length, 'products')
         return listJsonResponse(validProducts)
     } catch (error) {
-        console.error('[API] Error fetching products:', error?.message)
+        console.error('[API] ===== PRODUCTS ERROR START =====')
+        console.error('[API] Error type:', error?.constructor?.name)
+        console.error('[API] Error message:', error?.message)
+        console.error('[API] Error stack:', error?.stack)
+        console.error('[API] Full error object:', JSON.stringify(error, null, 2))
+        console.error('[API] ===== PRODUCTS ERROR END =====')
+        
         if (shouldUseDevProductFallback(error)) {
             try {
+                console.log('[API] Attempting dev fallback...')
                 const fallbackProducts = await getPublicDevProducts({ search: search || '', category: category || '' })
                 console.warn('[API] Using development product fallback due to database error')
-                return listJsonResponse(normalizeFallbackProducts(fallbackProducts, search, category))
+                return listJsonResponse(fallbackProducts)
             } catch (fallbackError) {
                 console.error('[API] Dev fallback error:', fallbackError?.message)
+                console.error('[API] Dev fallback stack:', fallbackError?.stack)
             }
         }
-        return NextResponse.json({ error: error?.message || 'Failed to fetch products' }, { status: 500 })
+        
+        const errorMessage = error?.message || 'Failed to fetch products'
+        console.error('[API] Returning 500 with error message:', errorMessage)
+        return NextResponse.json({ error: errorMessage }, { status: 500 })
     }
 }
 

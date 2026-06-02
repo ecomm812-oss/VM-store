@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser, sanitizeInput, createSecureErrorResponse } from '@/lib/security'
+import { getCurrentUser, getUserDisplayName, getUserPrimaryEmail, sanitizeInput, createSecureErrorResponse } from '@/lib/security'
 
 export async function POST(request) {
     try {
@@ -19,9 +19,9 @@ export async function POST(request) {
             user = await prisma.user.create({
                 data: {
                     clerkId: clerkUser.id,
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
-                    email: clerkUser.emailAddresses[0].emailAddress,
-                    image: clerkUser.imageUrl
+                    name: getUserDisplayName(clerkUser, 'User'),
+                    email: getUserPrimaryEmail(clerkUser, '', clerkUser.id),
+                    image: clerkUser.imageUrl || ''
                 }
             })
         }
@@ -93,6 +93,11 @@ export async function POST(request) {
         return NextResponse.json(address, { status: 201 })
     } catch (error) {
         console.error('Address creation error:', error)
+
+        if (process.env.NODE_ENV !== 'production') {
+            return NextResponse.json({ error: error.message || 'An internal server error occurred.', code: 500 }, { status: 500 })
+        }
+
         return createSecureErrorResponse('creating address', 500)
     }
 }
@@ -114,9 +119,9 @@ export async function GET() {
             user = await prisma.user.create({
                 data: {
                     clerkId: clerkUser.id,
-                    name: clerkUser.firstName + ' ' + clerkUser.lastName,
-                    email: clerkUser.emailAddresses[0].emailAddress,
-                    image: clerkUser.imageUrl
+                    name: getUserDisplayName(clerkUser, 'User'),
+                    email: getUserPrimaryEmail(clerkUser, '', clerkUser.id),
+                    image: clerkUser.imageUrl || ''
                 }
             })
         }

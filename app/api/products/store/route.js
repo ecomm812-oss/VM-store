@@ -37,10 +37,21 @@ function normalizeStringArrayField(value) {
     return []
 }
 
+function toImageSrc(value) {
+    if (typeof value === 'string') return value
+    if (value && typeof value === 'object') {
+        if (typeof value.src === 'string') return value.src
+        if (typeof value.url === 'string') return value.url
+        if (typeof value.default === 'string') return value.default
+        if (value.default && typeof value.default.src === 'string') return value.default.src
+    }
+    return null
+}
+
 function normalizeProductForResponse(product) {
     return {
         ...product,
-        images: normalizeStringArrayField(product.images),
+        images: normalizeStringArrayField(product.images).map(image => toImageSrc(image)).filter(Boolean),
         sizes: normalizeStringArrayField(product.sizes)
     }
 }

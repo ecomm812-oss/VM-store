@@ -5,7 +5,7 @@ export async function generateMetadata({ params }) {
     const { username } = params;
     const store = await prisma.store.findUnique({
       where: { username: username },
-      select: { storeName: true, description: true }
+      select: { name: true, description: true }
     });
 
     if (!store) {
@@ -16,8 +16,8 @@ export async function generateMetadata({ params }) {
     }
 
     return {
-      title: `${store.storeName} | Shop on VM Cart`,
-      description: store.description || `Visit ${store.storeName}'s store on VM Cart. Browse and shop quality products from this independent seller.`,
+      title: `${store.name} | Shop on VM Cart`,
+      description: store.description || `Visit ${store.name}'s store on VM Cart. Browse and shop quality products from this independent seller.`,
     };
   } catch (error) {
     return {

@@ -28,13 +28,13 @@ export default async function StoreShop({ params }) {
             <div className="max-w-7xl mx-auto bg-slate-50 rounded-xl p-6 md:p-10 mt-6 flex flex-col md:flex-row items-center gap-6 shadow-xs">
                 <Image
                     src={storeData.logo}
-                    alt={storeData.storeName}
+                    alt={storeData.storeName || storeData.name}
                     className="size-32 sm:size-38 object-cover border-2 border-slate-100 rounded-md"
                     width={200}
                     height={200}
                 />
                 <div className="text-center md:text-left">
-                    <h1 className="text-3xl font-semibold text-slate-800">{storeData.storeName}</h1>
+                    <h1 className="text-3xl font-semibold text-slate-800">{storeData.storeName || storeData.name}</h1>
                     <p className="text-sm text-slate-600 mt-2 max-w-lg">{storeData.description}</p>
                     <div className="space-y-2 text-sm text-slate-500 mt-4">
                         <div className="flex items-center">

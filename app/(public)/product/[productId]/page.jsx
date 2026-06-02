@@ -109,7 +109,7 @@ async function loadProduct(productId) {
 }
 
 export default async function Product({ params }) {
-    const productId = params.productId
+    const { productId } = await params
     console.log('[Product Page] Loading product with ID:', productId)
 
     const product = await loadProduct(productId)

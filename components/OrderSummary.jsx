@@ -88,7 +88,18 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
             return;
         }
 
-        const storeId = items[0]?.storeId;
+        const storeIds = [...new Set(items.map(item => item.storeId || item.store?.id).filter(Boolean))];
+        if (storeIds.length !== 1) {
+            toast.error('Cart items must be from a single store to place an order.');
+            return;
+        }
+
+        const storeId = storeIds[0];
+
+        if (!storeId) {
+            toast.error('Invalid store. Please refresh your cart and try again.');
+            return;
+        }
 
         const orderData = {
             total: coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)) : totalPrice,
@@ -236,7 +247,11 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
                                     </select>
                                 )
                             }
-                            <button className='flex items-center gap-1 text-slate-600 mt-1' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} /></button>
+                            {user ? (
+                                <button className='flex items-center gap-1 text-slate-600 mt-1' onClick={() => setShowAddressModal(true)} >Add Address <PlusIcon size={18} /></button>
+                            ) : (
+                                <button type='button' className='flex items-center gap-1 text-slate-600 mt-1' onClick={() => toast.error('Please login to add an address.')}>Add Address <PlusIcon size={18} /></button>
+                            )}
                         </div>
                     )
                 }
