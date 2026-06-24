@@ -29,13 +29,40 @@ function createFallbackProductId() {
     return `prod_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`
 }
 
+async function fetchProductByIdRaw(productId) {
+    const [product] = await prisma.$queryRaw`
+        SELECT
+            p."id",
+            p."name",
+            p."description",
+            p."mrp",
+            p."price",
+            p."images",
+            p."sizes",
+            p."category",
+            p."inStock",
+            p."storeId",
+            p."createdAt",
+            p."updatedAt"
+        FROM "Product" p
+        WHERE p."id" = ${productId}
+    `
 
+    if (!product) return null
+
+    return normalizeProductResponse({
+        ...product,
+        rating: [],
+        store: null
+    })
+}
 
 function isProductColumnTypeMismatch(error) {
     const message = error?.message || ''
-    return message.includes("Expected a string in column 'images', got object") ||
-        message.includes("Expected a string in column 'sizes', got object") ||
-        message.includes('malformed array literal')
+    return message.includes("Expected a string in column 'images'") ||
+        message.includes("Expected a string in column 'sizes'") ||
+        message.includes('malformed array literal') ||
+        message.includes('Expected a string in column')
 }
 
 export async function GET(request) {
@@ -97,6 +124,17 @@ export async function GET(request) {
                 console.log('[API] Product not found in database:', productId)
             } catch (dbError) {
                 console.error('[API] Database error for product:', dbError?.message)
+                if (isProductColumnTypeMismatch(dbError)) {
+                    console.log('[API] Product detail type mismatch, using raw fallback for:', productId)
+                    const fallbackProduct = await fetchProductByIdRaw(productId)
+                    if (fallbackProduct) {
+                        return NextResponse.json(fallbackProduct, {
+                            headers: {
+                                'Cache-Control': 'private, no-store'
+                            }
+                        })
+                    }
+                }
             }
 
             if (isDevelopment) {
@@ -217,25 +255,44 @@ export async function GET(request) {
         const validProducts = products
             .map(product => {
                 try {
-                    const parsedImages = typeof product.images === 'string' ? JSON.parse(product.images) : product.images
-                    const parsedSizes = typeof product.sizes === 'string' ? JSON.parse(product.sizes) : product.sizes
+                    const imagesValue = product.images
+                    const sizesValue = product.sizes
 
-                    const normalizedImages = Array.isArray(parsedImages)
-                        ? parsedImages
-                            .map(image => toImageSrc(image))
-                            .filter(Boolean)
+                    const parsedImages = typeof imagesValue === 'string'
+                        ? normalizeStringArrayInput(imagesValue)
+                        : Array.isArray(imagesValue)
+                            ? imagesValue
+                            : imagesValue && typeof imagesValue === 'object'
+                                ? Object.values(imagesValue)
+                                : []
+
+                    const normalizedImages = parsedImages
+                        .flatMap(image => Array.isArray(image) ? image : [image])
+                        .map(image => toImageSrc(image))
+                        .filter(Boolean)
+
+                    const parsedSizes = typeof sizesValue === 'string'
+                        ? normalizeStringArrayInput(sizesValue)
+                        : Array.isArray(sizesValue)
+                            ? sizesValue
+                            : sizesValue && typeof sizesValue === 'object'
+                                ? Object.values(sizesValue)
+                                : []
+
+                    const normalizedSizes = Array.isArray(parsedSizes)
+                        ? parsedSizes.map(size => (typeof size === 'string' ? size.trim() : String(size || '').trim())).filter(Boolean)
                         : []
 
                     return {
                         ...product,
                         images: normalizedImages,
-                        sizes: Array.isArray(parsedSizes) ? parsedSizes : [],
+                        sizes: normalizedSizes,
                         rating: [],
                         ratingCount: product?._count?.rating || 0,
                         averageRating: 0
                     }
                 } catch (error) {
-                    console.warn(`[API] Failed to parse JSON for product ${product.id}:`, error?.message)
+                    console.warn(`[API] Failed to normalize product ${product.id}:`, error?.message)
                     return null
                 }
             })

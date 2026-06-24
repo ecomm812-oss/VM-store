@@ -6,8 +6,45 @@ import { checkRateLimit } from '@/lib/rateLimit'
 
 function isProductColumnTypeMismatch(error) {
     const message = error?.message || ''
-    return message.includes("Expected a string in column 'images', got object") ||
-        message.includes('malformed array literal')
+    return message.includes("Expected a string in column 'images'") ||
+        message.includes("Expected a string in column 'sizes'") ||
+        message.includes('malformed array literal') ||
+        message.includes('Expected a string in column')
+}
+
+async function fetchProductByIdRaw(productId) {
+    const [product] = await prisma.$queryRaw`
+        SELECT
+            id,
+            name,
+            price,
+            "inStock",
+            "storeId"
+        FROM "Product"
+        WHERE id = ${productId}
+    `
+
+    return product || null
+}
+
+async function loadProductForOrder(productId) {
+    try {
+        return await prisma.product.findUnique({
+            where: { id: productId },
+            select: {
+                id: true,
+                name: true,
+                price: true,
+                inStock: true,
+                storeId: true
+            }
+        })
+    } catch (error) {
+        if (isProductColumnTypeMismatch(error)) {
+            return await fetchProductByIdRaw(productId)
+        }
+        throw error
+    }
 }
 
 async function attachOrderItemProductNames(orders) {
@@ -92,9 +129,7 @@ export async function POST(request) {
         // Validate that all products exist and are in stock, and calculate correct total
         let calculatedTotal = 0
         for (const item of orderItems) {
-            const product = await prisma.product.findUnique({
-                where: { id: item.productId }
-            })
+            const product = await loadProductForOrder(item.productId)
 
             if (!product) {
                 return NextResponse.json({ error: `Product ${item.productId} not found`, code: 400 }, { status: 400 })
@@ -105,7 +140,7 @@ export async function POST(request) {
             }
 
             if (product.storeId !== storeId) {
-                return NextResponse.json({ error: `Product ${product.name} does not belong to this store`, code: 400 }, { status: 400 })
+                return NextResponse.json({ error: `Product ${product.name} does not belong to this store`, code: 400 })
             }
 
             // Validate quantity
