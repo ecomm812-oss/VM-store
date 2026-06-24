@@ -1,7 +1,30 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images:{
-        unoptimized: true
+    images: {
+        unoptimized: false,
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'via.placeholder.com'
+            },
+            {
+                protocol: 'https',
+                hostname: 'img.clerk.com'
+            },
+            {
+                protocol: 'https',
+                hostname: 'res.cloudinary.com'
+            }
+            ,
+            {
+                protocol: 'https',
+                hostname: 'picsum.photos'
+            },
+            {
+                protocol: 'https',
+                hostname: 'example.com'
+            }
+        ]
     },
 
     // Security headers

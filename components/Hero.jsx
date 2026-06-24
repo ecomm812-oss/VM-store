@@ -29,7 +29,7 @@ const Hero = () => {
                             <button className='bg-slate-800 text-white text-sm py-2.5 px-7 sm:py-5 sm:px-12 mt-4 sm:mt-10 rounded-md hover:bg-slate-900 hover:scale-103 active:scale-95 transition btn-primary animate-slideInUp' style={{ animationDelay: '0.3s' }}>SHOP</button>
                         </Link>
                     </div>
-                    <Image className='sm:absolute bottom-0 right-0 md:right-0 w-full sm:max-w-sm animate-fadeInRight' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="" />
+                    <Image priority className='sm:absolute bottom-0 right-0 md:right-0 w-full sm:max-w-sm animate-fadeInRight' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="" />
                 </div>
                 <div className='flex flex-col md:flex-row xl:flex-col gap-5 w-full xl:max-w-sm text-sm text-slate-600'>
                     <div className='flex-1 flex items-center justify-between w-full bg-orange-200 rounded-3xl p-6 px-8 group hover-lift card-animate animate-fadeInRight' style={{ animationDelay: '0.1s' }}>
