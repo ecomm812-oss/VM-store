@@ -75,6 +75,35 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
         event.preventDefault();
     }
 
+    const verifyRazorpayPayment = async (paymentResponse, orderId) => {
+        try {
+            const verifyResponse = await fetch('/api/payments/verify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId,
+                    razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                    razorpayOrderId: paymentResponse.razorpay_order_id,
+                    razorpaySignature: paymentResponse.razorpay_signature
+                })
+            });
+
+            if (!verifyResponse.ok) {
+                const verificationError = await verifyResponse.json();
+                throw new Error(verificationError.error || 'Payment verification failed');
+            }
+
+            toast.success('Payment successful!');
+            router.push('/orders');
+        } catch (verifyError) {
+            console.error('Payment verification failed:', verifyError);
+            toast.error(verifyError.message || 'Payment verification failed. Please contact support.');
+            router.push('/orders');
+        }
+    }
+
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
 
@@ -130,10 +159,14 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
                 throw new Error(error.error || 'Failed to place order');
             }
 
-            const { order, razorpayOrder } = await response.json();
+            const { order, razorpayOrder, razorpayKeyId: serverKeyId } = await response.json();
 
-            if (paymentMethod === 'RAZORPAY' && razorpayOrder) {
-                const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+            if (paymentMethod === 'RAZORPAY') {
+                if (!razorpayOrder) {
+                    throw new Error('Payment gateway order creation failed. Please try again.');
+                }
+
+                const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || serverKeyId;
                 if (!razorpayKeyId) {
                     toast.error('Razorpay is not configured on this frontend. Please contact support.');
                     return;
@@ -152,33 +185,7 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
                     description: 'Order Payment',
                     order_id: razorpayOrder.id,
                     handler: async function (response) {
-                        try {
-                            const updateResponse = await fetch('/api/orders', {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    orderId: order.id,
-                                    isPaid: true,
-                                    razorpayPaymentId: response.razorpay_payment_id,
-                                    razorpayOrderId: response.razorpay_order_id,
-                                    razorpaySignature: response.razorpay_signature
-                                })
-                            });
-
-                            if (!updateResponse.ok) {
-                                const error = await updateResponse.json();
-                                throw new Error(error.error || 'Failed to update payment status');
-                            }
-
-                            toast.success('Payment successful!');
-                            router.push('/orders');
-                        } catch (updateError) {
-                            console.error('Failed to update payment status:', updateError);
-                            toast.error('Payment completed but status update failed. Please contact support.');
-                            router.push('/orders');
-                        }
+                        await verifyRazorpayPayment(response, order.id);
                     },
                     modal: {
                         ondismiss: function() {

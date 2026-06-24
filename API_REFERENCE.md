@@ -306,12 +306,29 @@ GET /api/products/[productId]/ratings
 ### Razorpay Integration
 ```
 Razorpay is integrated via server-side verification
-All payment requests go through orders endpoint
+Order creation is handled by POST /api/orders
+Signature verification is handled by POST /api/payments/verify-payment
 ```
 
 **Supported Payment Methods**:
 - `RAZORPAY`: Online payment gateway
 - `COD`: Cash on delivery
+
+### Verify Razorpay Payment
+```http
+POST /api/payments/verify-payment
+Content-Type: application/json
+
+{
+  "orderId": "<order-id>",
+  "razorpayPaymentId": "<razorpay_payment_id>",
+  "razorpayOrderId": "<razorpay_order_id>",
+  "razorpaySignature": "<razorpay_signature>"
+}
+```
+
+**Description**: Verify Razorpay signature server-side and mark the order paid.
+**Auth**: Required
 
 ---
 

@@ -238,7 +238,7 @@ export async function POST(request) {
             }
         }
 
-        return NextResponse.json({ order, razorpayOrder })
+        return NextResponse.json({ order, razorpayOrder, razorpayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID })
     } catch (error) {
         if (shouldUseDatabaseFallback(error)) {
             return NextResponse.json([])
