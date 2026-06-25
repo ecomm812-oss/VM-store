@@ -69,7 +69,8 @@ export async function GET() {
                             product: {
                                 select: {
                                     id: true,
-                                    name: true
+                                    name: true,
+                                    images: true
                                 }
                             }
                         }

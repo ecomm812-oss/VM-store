@@ -16,6 +16,32 @@ const OrderItem = ({ order }) => {
 
     const { ratings } = useSelector(state => state.rating);
 
+    const getProductImage = (images) => {
+        if (!images) return '/placeholder.png';
+        
+        // If images is already an array
+        if (Array.isArray(images)) {
+            return images[0] || '/placeholder.png';
+        }
+        
+        // If images is a JSON string
+        if (typeof images === 'string') {
+            try {
+                const parsedImages = JSON.parse(images);
+                if (Array.isArray(parsedImages)) {
+                    return parsedImages[0] || '/placeholder.png';
+                }
+            } catch (e) {
+                // If it's not JSON but a direct URL string
+                if (images.startsWith('http') || images.startsWith('/')) {
+                    return images;
+                }
+            }
+        }
+        
+        return '/placeholder.png';
+    };
+
     const canCancelOrder = () => {
         return order.status === 'ORDER_PLACED' || order.status === 'PROCESSING';
     };
@@ -65,7 +91,7 @@ const OrderItem = ({ order }) => {
                                     <div className="w-20 aspect-square bg-slate-100 flex items-center justify-center rounded-md hover:shadow-md transition-all duration-300 card-animate">
                                         <Image
                                             className="h-14 w-auto transition-transform duration-300 hover:scale-110"
-                                            src={item?.product?.images?.[0] || '/placeholder.png'}
+                                            src={getProductImage(item?.product?.images)}
                                             alt="product_img"
                                             width={50}
                                             height={50}
