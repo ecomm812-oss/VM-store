@@ -1,7 +1,7 @@
 'use client'
 
 import { addToCart } from "@/lib/features/cart/cartSlice";
-import { StarIcon, TagIcon, EarthIcon, CreditCardIcon, UserIcon } from "lucide-react";
+import { StarIcon, TagIcon, EarthIcon, CreditCardIcon, UserIcon, TruckIcon, RotateCcwIcon, CalendarDaysIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
@@ -28,7 +28,7 @@ const ProductDetails = ({ product }) => {
     const router = useRouter()
 
     // Safe access to images - ensure it's an array
-    const images = Array.isArray(product.images) ? product.images : []
+    const images = Array.isArray(product.images) ? product.images.filter(Boolean) : []
     const [mainImage, setMainImage] = useState(images?.[0] || '/placeholder.png');
 
     const [selectedSize, setSelectedSize] = useState(product?.category === 'Clothing' ? 'M' : 'One Size');
@@ -41,10 +41,25 @@ const ProductDetails = ({ product }) => {
 
     // Safe rating calculation - ensure rating is an array
     const rating = Array.isArray(product.rating) ? product.rating : []
-    const averageRating = (rating.length > 0) 
+    const averageRating = (rating.length > 0)
         ? rating.reduce((acc, item) => acc + (item.rating || 0), 0) / rating.length
         : 0;
-    
+
+    const deliveryDays = Number(product?.deliveryDays) || 5;
+    const defaultDeliveryDate = new Date();
+    defaultDeliveryDate.setDate(defaultDeliveryDate.getDate() + deliveryDays);
+    const estimatedDeliveryDate = product?.estimatedDelivery
+        ? new Date(product.estimatedDelivery)
+        : defaultDeliveryDate;
+    const deliveryCharge = typeof product?.deliveryCharge === 'number'
+        ? product.deliveryCharge
+        : (Number(product?.price) >= 499 ? 0 : 49);
+    const returnPolicy = product?.returnPolicy || 'Easy 7-day returns if the product is unused and packed in its original condition.';
+    const deliveryLabel = deliveryCharge === 0 ? 'Free delivery' : `${currency}${deliveryCharge} delivery charge`;
+    const formattedDeliveryDate = Number.isNaN(estimatedDeliveryDate.getTime())
+        ? `in ${deliveryDays} business days`
+        : estimatedDeliveryDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+
     return (
         <div className="flex max-lg:flex-col gap-12">
             <div className="flex max-sm:flex-col-reverse gap-3">
@@ -75,6 +90,33 @@ const ProductDetails = ({ product }) => {
                     <TagIcon size={14} />
                     <p>Save {((product.mrp - product.price) / product.mrp * 100).toFixed(0)}% right now</p>
                 </div>
+
+                <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="flex items-start gap-2 text-sm text-slate-600">
+                            <TruckIcon size={16} className="mt-0.5 text-slate-500" />
+                            <div>
+                                <p className="font-semibold text-slate-800">Delivery</p>
+                                <p>{deliveryLabel}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm text-slate-600">
+                            <CalendarDaysIcon size={16} className="mt-0.5 text-slate-500" />
+                            <div>
+                                <p className="font-semibold text-slate-800">Delivered by</p>
+                                <p>{formattedDeliveryDate}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm text-slate-600">
+                            <RotateCcwIcon size={16} className="mt-0.5 text-slate-500" />
+                            <div>
+                                <p className="font-semibold text-slate-800">Return policy</p>
+                                <p>{returnPolicy}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex items-end gap-5 mt-10">
                     {availableSizes.length > 0 && (
                         <div className="flex flex-col gap-3">

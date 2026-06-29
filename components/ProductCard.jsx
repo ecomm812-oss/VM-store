@@ -3,12 +3,45 @@ import { StarIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import { normalizeStringArrayInput, sanitizeImageSrc } from '@/lib/product-utils'
 
 const ProductCard = ({ product }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹'
 
-    const imageSrc = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : '/placeholder.png'
+    const getImageSrc = (value) => {
+        if (Array.isArray(value)) {
+            for (const item of value) {
+                const src = getImageSrc(item)
+                if (src) return src
+            }
+            return null
+        }
+
+        if (value && typeof value === 'object') {
+            const src = sanitizeImageSrc(value)
+            if (src) return src
+
+            for (const item of Object.values(value)) {
+                const nestedSrc = getImageSrc(item)
+                if (nestedSrc) return nestedSrc
+            }
+            return null
+        }
+
+        if (typeof value === 'string') {
+            const parsedValues = normalizeStringArrayInput(value)
+            for (const item of parsedValues) {
+                const src = sanitizeImageSrc(item)
+                if (src) return src
+            }
+            return sanitizeImageSrc(value)
+        }
+
+        return null
+    }
+
+    const imageSrc = getImageSrc(product?.images) || '/placeholder.png'
 
     // Validate product data
     if (!product || !product.id || !product.name) {
