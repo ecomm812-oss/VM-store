@@ -7,6 +7,30 @@ import { useState } from "react";
 import Image from "next/image";
 import Counter from "./Counter";
 import { useDispatch, useSelector } from "react-redux";
+import { normalizeStringArrayInput, sanitizeImageSrc } from '@/lib/product-utils'
+
+const normalizeProductImages = (images) => {
+    if (!images) return []
+
+    if (Array.isArray(images)) {
+        return images.flatMap(item => normalizeProductImages(item))
+    }
+
+    if (typeof images === 'string') {
+        return normalizeStringArrayInput(images)
+            .flatMap(item => normalizeProductImages(item))
+    }
+
+    if (typeof images === 'object') {
+        const sanitized = sanitizeImageSrc(images)
+        if (sanitized) return [sanitized]
+
+        return Object.values(images)
+            .flatMap(item => normalizeProductImages(item))
+    }
+
+    return []
+}
 
 const ProductDetails = ({ product }) => {
 
@@ -28,7 +52,7 @@ const ProductDetails = ({ product }) => {
     const router = useRouter()
 
     // Safe access to images - ensure it's an array
-    const images = Array.isArray(product.images) ? product.images.filter(Boolean) : []
+    const images = normalizeProductImages(product.images)
     const [mainImage, setMainImage] = useState(images?.[0] || '/placeholder.png');
 
     const [selectedSize, setSelectedSize] = useState(product?.category === 'Clothing' ? 'M' : 'One Size');
