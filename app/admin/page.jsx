@@ -16,6 +16,8 @@ export default function AdminDashboard() {
         orders: 0,
         stores: 0,
         allOrders: [],
+        productDetails: [],
+        orderDetails: []
     })
 
     const dashboardCardsData = [
@@ -65,6 +67,81 @@ export default function AdminDashboard() {
                         </div>
                     ))
                 }
+            </div>
+
+            {/* Product & Order details */}
+            <div className="grid gap-8 lg:grid-cols-[1fr_1fr] my-10">
+                <section className="border border-slate-200 rounded-xl p-6 bg-white">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-xl font-semibold text-slate-800">Total Products</h2>
+                            <p className="text-sm text-slate-500">Latest products with store details</p>
+                        </div>
+                        <span className="text-slate-500 text-sm">{dashboardData.products} total</span>
+                    </div>
+
+                    {dashboardData.productDetails.length > 0 ? (
+                        <div className="space-y-4">
+                            {dashboardData.productDetails.map((product) => (
+                                <div key={product.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 p-4 bg-slate-50">
+                                    <div>
+                                        <p className="font-medium text-slate-800">{product.name}</p>
+                                        <p className="text-sm text-slate-500">{product.store?.name ?? 'Unknown store'}</p>
+                                    </div>
+                                    <div className="text-right text-sm text-slate-700">
+                                        <p>{currency}{product.price.toFixed(2)}</p>
+                                        <p className="text-slate-500">{new Date(product.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-500">No product details available yet.</p>
+                    )}
+                </section>
+
+                <section className="border border-slate-200 rounded-xl p-6 bg-white">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-xl font-semibold text-slate-800">Total Orders</h2>
+                            <p className="text-sm text-slate-500">Recent orders with products and store names</p>
+                        </div>
+                        <span className="text-slate-500 text-sm">{dashboardData.orders} total</span>
+                    </div>
+
+                    {dashboardData.orderDetails.length > 0 ? (
+                        <div className="space-y-4">
+                            {dashboardData.orderDetails.map((order) => (
+                                <div key={order.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <p className="font-medium text-slate-800">Order #{order.id.slice(0, 8)}</p>
+                                            <p className="text-sm text-slate-500">Store: {order.store?.name ?? 'Unknown store'}</p>
+                                            <p className="text-sm text-slate-500">Status: {order.status}</p>
+                                        </div>
+                                        <div className="text-right text-sm font-semibold text-slate-700">
+                                            <p>{currency}{order.total.toFixed(2)}</p>
+                                            <p className="text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 space-y-2">
+                                        {(order.orderItems || []).map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-3">
+                                                <div>
+                                                    <p className="text-sm text-slate-800">{item.product?.name ?? 'Unknown product'}</p>
+                                                    <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
+                                                </div>
+                                                <div className="text-sm text-slate-700">{currency}{item.price.toFixed(2)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-slate-500">No order details available yet.</p>
+                    )}
+                </section>
             </div>
 
             {/* Area Chart */}

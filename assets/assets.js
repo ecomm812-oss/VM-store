@@ -396,6 +396,39 @@ export const dummyAdminDashboardData = {
         { "createdAt": "2025-08-25T11:44:29.713Z", "total": 26.1 },
         { "createdAt": "2025-08-25T11:56:29.713Z", "total": 36.1 },
         { "createdAt": "2025-08-25T11:30:29.713Z", "total": 110.1 }
+    ],
+    "productDetails": [
+        {
+            "id": "prod_1",
+            "name": "Cotton T-shirt",
+            "price": 29.99,
+            "createdAt": "2025-08-25T11:30:29.713Z",
+            "store": { "name": "Happy Shop" }
+        },
+        {
+            "id": "prod_2",
+            "name": "Artisan Mug",
+            "price": 15.50,
+            "createdAt": "2025-08-24T09:15:03.929Z",
+            "store": { "name": "GreatStack" }
+        }
+    ],
+    "orderDetails": [
+        {
+            "id": "order_1",
+            "total": 145.60,
+            "status": "DELIVERED",
+            "createdAt": "2025-08-24T09:15:03.929Z",
+            "store": { "name": "GreatStack" },
+            "orderItems": [
+                {
+                    "id": "item_1",
+                    "quantity": 1,
+                    "price": 145.60,
+                    "product": { "name": "Artisan Mug" }
+                }
+            ]
+        }
     ]
 }
 

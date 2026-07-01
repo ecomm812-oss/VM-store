@@ -39,12 +39,35 @@ export async function GET() {
             }
         })
 
+        const productDetails = await prisma.product.findMany({
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                store: true
+            }
+        })
+
+        const orderDetails = await prisma.order.findMany({
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            include: {
+                store: true,
+                orderItems: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        })
+
         return NextResponse.json({
             products,
             revenue,
             orders,
             stores,
-            allOrders
+            allOrders,
+            productDetails,
+            orderDetails
         })
     } catch (error) {
         console.error('Admin dashboard error:', error)
