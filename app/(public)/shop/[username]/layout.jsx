@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-static'
+export const revalidate = 60
+
 export async function generateMetadata({ params }) {
   try {
     const { username } = params;

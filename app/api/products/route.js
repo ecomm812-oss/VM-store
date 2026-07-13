@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, getOrCreateUserRecord } from '@/lib/security'
+<<<<<<< HEAD
 import { createDevProduct, getPublicDevProducts, shouldUseDevProductFallback, getDevProductById } from '@/lib/dev-product-fallback'
 import { normalizeProductResponse, normalizeStringArrayInput, toImageSrc } from '@/lib/product-utils'
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
+=======
+import { createDevProduct, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
+import { normalizeProductResponse, normalizeStringArrayInput, toImageSrc } from '@/lib/product-utils'
+>>>>>>> beffe1f (chore: update project files)
 
 const LIST_CACHE_HEADERS = {
     'Cache-Control': 'public, max-age=30, s-maxage=60, stale-while-revalidate=300'
@@ -255,6 +260,7 @@ export async function GET(request) {
         const validProducts = products
             .map(product => {
                 try {
+<<<<<<< HEAD
                     const imagesValue = product.images
                     const sizesValue = product.sizes
 
@@ -281,12 +287,42 @@ export async function GET(request) {
 
                     const normalizedSizes = Array.isArray(parsedSizes)
                         ? parsedSizes.map(size => (typeof size === 'string' ? size.trim() : String(size || '').trim())).filter(Boolean)
+=======
+                    const parsedImages = typeof product.images === 'string'
+                        ? normalizeStringArrayInput(product.images)
+                        : Array.isArray(product.images)
+                            ? product.images
+                            : []
+
+                    const parsedSizes = typeof product.sizes === 'string'
+                        ? normalizeStringArrayInput(product.sizes)
+                        : Array.isArray(product.sizes)
+                            ? product.sizes
+                            : []
+
+                    const normalizedImages = Array.isArray(parsedImages)
+                        ? parsedImages
+                            .map(image => {
+                                if (typeof image === 'string') return image
+                                if (image && typeof image === 'object') {
+                                    return toImageSrc(image)
+                                }
+                                return null
+                            })
+                            .filter(Boolean)
+>>>>>>> beffe1f (chore: update project files)
                         : []
 
                     return {
                         ...product,
                         images: normalizedImages,
+<<<<<<< HEAD
                         sizes: normalizedSizes,
+=======
+                        sizes: Array.isArray(parsedSizes)
+                            ? parsedSizes.map(size => (typeof size === 'string' ? size.trim() : String(size || '').trim())).filter(Boolean)
+                            : [],
+>>>>>>> beffe1f (chore: update project files)
                         rating: [],
                         ratingCount: product?._count?.rating || 0,
                         averageRating: 0

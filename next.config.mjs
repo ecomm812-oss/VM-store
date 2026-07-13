@@ -1,5 +1,11 @@
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+<<<<<<< HEAD
     images: {
         unoptimized: false,
         remotePatterns: [
@@ -25,6 +31,11 @@ const nextConfig = {
                 hostname: 'example.com'
             }
         ]
+=======
+    outputFileTracingRoot: __dirname,
+    images:{
+        unoptimized: true
+>>>>>>> beffe1f (chore: update project files)
     },
 
     // Security headers

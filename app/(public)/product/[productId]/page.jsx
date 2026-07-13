@@ -1,3 +1,7 @@
+export const revalidate = 60;
+
+export const revalidate = 60;
+
 import ProductDescription from "@/components/ProductDescription";
 import ProductDetails from "@/components/ProductDetails";
 import { prisma } from "@/lib/prisma";
