@@ -6,6 +6,26 @@ import { getDevProductById, shouldUseDevProductFallback } from '@/lib/dev-produc
 
 export const revalidate = 60
 
+function createFallbackProduct(productId) {
+    return {
+        id: productId,
+        name: 'Product preview',
+        description: 'This product is currently unavailable, but you can still browse the store and discover similar items.',
+        mrp: 0,
+        price: 0,
+        images: ['/placeholder.png'],
+        sizes: [],
+        category: 'General',
+        inStock: false,
+        storeId: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        rating: [],
+        store: null,
+        deliveryCharge: 0
+    }
+}
+
 function isProductColumnTypeMismatch(error) {
     const message = error?.message || ''
     return message.includes("Expected a string in column 'images'") ||
@@ -89,14 +109,13 @@ export default async function Product({ params }) {
     const product = await loadProduct(productId)
 
     if (!product) {
+        const fallbackProduct = createFallbackProduct(productId)
         return (
             <div className="mx-6">
-                <div className="max-w-7xl mx-auto text-center py-24">
-                    <p className="text-red-500 text-xl font-semibold">Unable to load product details.</p>
-                    <p className="text-slate-500 mt-4">The product you are looking for may not exist or is currently unavailable.</p>
-                    <a href="/shop" className="text-blue-500 hover:text-blue-700 mt-6 inline-block">
-                        Back to shop
-                    </a>
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-gray-600 text-sm mt-8 mb-5">Home / Products / General</div>
+                    <ProductDetails product={fallbackProduct} />
+                    <ProductDescription product={fallbackProduct} />
                 </div>
             </div>
         )

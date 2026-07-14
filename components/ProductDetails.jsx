@@ -17,8 +17,10 @@ const normalizeProductImages = (images) => {
     }
 
     if (typeof images === 'string') {
-        return normalizeStringArrayInput(images)
-            .flatMap(item => normalizeProductImages(item))
+        const parsedItems = normalizeStringArrayInput(images)
+        return parsedItems
+            .map(item => sanitizeImageSrc(item))
+            .filter(Boolean)
     }
 
     if (typeof images === 'object') {
