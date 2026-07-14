@@ -5,6 +5,8 @@ import ClientClerkProvider from "@/components/ClientClerkProvider";
 import AppInitializer from "@/components/AppInitializer";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
@@ -32,10 +34,18 @@ export default function RootLayout({ children }) {
                     <Toaster />
                     {isClerkConfigured ? (
                         <ClientClerkProvider publishableKey={clerkPublishableKey}>
-                            {children}
+                            <div className="min-h-screen bg-white">
+                                <Navbar />
+                                {children}
+                                <Footer />
+                            </div>
                         </ClientClerkProvider>
                     ) : (
-                        children
+                        <div className="min-h-screen bg-white">
+                            <Navbar />
+                            {children}
+                            <Footer />
+                        </div>
                     )}
                 </StoreProvider>
                 <Analytics />
