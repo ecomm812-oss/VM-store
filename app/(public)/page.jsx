@@ -1,13 +1,9 @@
-<<<<<<< HEAD
 import Hero from '@/components/Hero'
 import Newsletter from '@/components/Newsletter'
 import OurSpecs from '@/components/OurSpec'
 import LatestProducts from '@/components/LatestProducts'
 import BestSelling from '@/components/BestSelling'
 import { getLatestProducts, getBestSellingProducts } from '@/lib/product-service'
-=======
-export const revalidate = 60;
->>>>>>> beffe1f (chore: update project files)
 
 export const revalidate = 60
 

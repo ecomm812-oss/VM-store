@@ -1,10 +1,6 @@
-<<<<<<< HEAD
 import Link from 'next/link'
 import ProductCard from '@/components/ProductCard'
 import { getPublicShopProducts, countPublicShopProducts } from '@/lib/product-service'
-=======
-export const revalidate = 60;
->>>>>>> beffe1f (chore: update project files)
 
 export const revalidate = 300
 

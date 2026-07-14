@@ -5,7 +5,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-<<<<<<< HEAD
+    outputFileTracingRoot: __dirname,
     images: {
         unoptimized: false,
         remotePatterns: [
@@ -20,8 +20,7 @@ const nextConfig = {
             {
                 protocol: 'https',
                 hostname: 'res.cloudinary.com'
-            }
-            ,
+            },
             {
                 protocol: 'https',
                 hostname: 'picsum.photos'
@@ -31,11 +30,6 @@ const nextConfig = {
                 hostname: 'example.com'
             }
         ]
-=======
-    outputFileTracingRoot: __dirname,
-    images:{
-        unoptimized: true
->>>>>>> beffe1f (chore: update project files)
     },
 
     // Security headers
