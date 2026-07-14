@@ -137,7 +137,7 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Store not found' }, { status: 404 })
         }
 
-        const { orderId, status } = await request.json()
+        const { orderId, status, deliveredAt } = await request.json()
 
         if (!orderId || !status) {
             return NextResponse.json({ error: 'Order ID and status are required' }, { status: 400 })
@@ -155,10 +155,15 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Order not found or access denied' }, { status: 404 })
         }
 
+        const normalizedDeliveredAt = status === 'DELIVERED'
+            ? (deliveredAt ? new Date(deliveredAt) : new Date())
+            : null
+
         const updatedOrder = await prisma.order.update({
             where: { id: orderId },
-            data: { 
+            data: {
                 status: status,
+                deliveredAt: normalizedDeliveredAt,
                 // For COD orders, mark as paid when delivered
                 ...(status === 'DELIVERED' && order.paymentMethod === 'COD' && { isPaid: true })
             },

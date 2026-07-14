@@ -18,6 +18,7 @@ export default function StoreAddProduct() {
         description: "",
         mrp: 0,
         price: 0,
+        deliveryCharge: 0,
         category: "",
     })
     const [aiGeneratedDescription, setAiGeneratedDescription] = useState("")
@@ -147,6 +148,7 @@ export default function StoreAddProduct() {
                     description: "",
                     mrp: 0,
                     price: 0,
+                    deliveryCharge: 0,
                     category: "",
                 })
                 setImages(['', '', '', ''])
@@ -288,7 +290,7 @@ export default function StoreAddProduct() {
                 )}
             </label>
 
-            <div className="flex gap-5">
+            <div className="flex gap-5 flex-wrap">
                 <label htmlFor="" className="flex flex-col gap-2 ">
                     Actual Price (₹)
                     <input type="number" name="mrp" onChange={onChangeHandler} value={productInfo.mrp} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
@@ -296,6 +298,10 @@ export default function StoreAddProduct() {
                 <label htmlFor="" className="flex flex-col gap-2 ">
                     Offer Price (₹)
                     <input type="number" name="price" onChange={onChangeHandler} value={productInfo.price} placeholder="0" rows={5} className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded resize-none" required />
+                </label>
+                <label htmlFor="" className="flex flex-col gap-2 ">
+                    Delivery Charge (₹)
+                    <input type="number" name="deliveryCharge" min="0" step="1" onChange={onChangeHandler} value={productInfo.deliveryCharge} placeholder="0" className="w-full max-w-45 p-2 px-4 outline-none border border-slate-200 rounded" required />
                 </label>
             </div>
 

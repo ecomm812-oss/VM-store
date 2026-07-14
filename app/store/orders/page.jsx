@@ -46,7 +46,7 @@ export default function StoreOrders() {
         }
     }
 
-    const updateOrderStatus = async (orderId, status) => {
+    const updateOrderStatus = async (orderId, status, deliveredAt = null) => {
         const response = await fetch('/api/orders/store', {
             method: 'PUT',
             headers: {
@@ -54,13 +54,14 @@ export default function StoreOrders() {
             },
             body: JSON.stringify({
                 orderId: orderId,
-                status: status
+                status: status,
+                deliveredAt: deliveredAt
             })
         })
 
         if (response.ok) {
             const updatedOrder = await response.json()
-            setOrders(orders.map(o => o.id === orderId ? updatedOrder : o))
+            setOrders(prevOrders => prevOrders.map(o => o.id === orderId ? updatedOrder : o))
             return updatedOrder
         } else {
             try {
@@ -73,6 +74,15 @@ export default function StoreOrders() {
                 throw new Error('Failed to update order status')
             }
         }
+    }
+
+    const updateDeliveredDate = async (orderId, deliveredAt) => {
+        const orderToUpdate = orders.find(order => order.id === orderId)
+        if (!orderToUpdate) {
+            throw new Error('Order not found')
+        }
+
+        return updateOrderStatus(orderId, 'DELIVERED', deliveredAt)
     }
 
     const updateTrackingInfo = async () => {
@@ -185,17 +195,27 @@ export default function StoreOrders() {
                                         )}
                                     </td>
                                     <td className="px-4 py-3" onClick={(e) => { e.stopPropagation() }}>
-                                        <select
-                                            value={order.status}
-                                            onChange={e => toast.promise(updateOrderStatus(order.id, e.target.value), { loading: "Updating status...", success: "Status updated!", error: (err) => err.message })}
-                                            className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
-                                        >
-                                            <option value="ORDER_PLACED">ORDER_PLACED</option>
-                                            <option value="PROCESSING">PROCESSING</option>
-                                            <option value="SHIPPED">SHIPPED</option>
-                                            <option value="DELIVERED">DELIVERED</option>
-                                            <option value="CANCELLED">CANCELLED</option>
-                                        </select>
+                                        <div className="flex flex-col gap-2">
+                                            <select
+                                                value={order.status}
+                                                onChange={e => toast.promise(updateOrderStatus(order.id, e.target.value, order.deliveredAt), { loading: "Updating status...", success: "Status updated!", error: (err) => err.message })}
+                                                className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
+                                            >
+                                                <option value="ORDER_PLACED">ORDER_PLACED</option>
+                                                <option value="PROCESSING">PROCESSING</option>
+                                                <option value="SHIPPED">SHIPPED</option>
+                                                <option value="DELIVERED">DELIVERED</option>
+                                                <option value="CANCELLED">CANCELLED</option>
+                                            </select>
+                                            {(order.status === 'DELIVERED' || order.deliveredAt) && (
+                                                <input
+                                                    type="date"
+                                                    value={order.deliveredAt ? new Date(order.deliveredAt).toISOString().split('T')[0] : ''}
+                                                    onChange={e => toast.promise(updateDeliveredDate(order.id, e.target.value), { loading: "Updating delivery date...", success: "Delivery date updated!", error: (err) => err.message })}
+                                                    className="border-gray-300 rounded-md text-sm focus:ring focus:ring-blue-200"
+                                                />
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3 text-gray-500">
                                         {new Date(order.createdAt).toLocaleString()}
@@ -258,6 +278,7 @@ export default function StoreOrders() {
                                 <p><span className="text-green-700">Coupon:</span> {selectedOrder.coupon.code} ({selectedOrder.coupon.discount}% off)</p>
                             )}
                             <p><span className="text-green-700">Status:</span> {selectedOrder.status}</p>
+                            <p><span className="text-green-700">Delivered On:</span> {selectedOrder.deliveredAt ? new Date(selectedOrder.deliveredAt).toLocaleDateString() : 'Not set'}</p>
                             <p><span className="text-green-700">Order Date:</span> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
                         </div>
 

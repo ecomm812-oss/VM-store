@@ -98,7 +98,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Authentication required.', code: 401 }, { status: 401 })
         }
 
-        const { total, storeId, addressId, paymentMethod, orderItems, isCouponUsed, coupon } = await request.json()
+        const { total, deliveryCharge, storeId, addressId, paymentMethod, orderItems, isCouponUsed, coupon } = await request.json()
 
         // Validate required fields
         if (!total || !storeId || !addressId || !paymentMethod || !orderItems || orderItems.length === 0) {
@@ -152,11 +152,13 @@ export async function POST(request) {
             calculatedTotal += product.price * item.quantity
         }
 
-        // Validate that submitted total matches calculated total (allow 1 cent tolerance for currency issues)
+        const expectedTotal = calculatedTotal + Number(deliveryCharge || 0)
+
+        // Validate that submitted total matches calculated total plus any delivery charge (allow 1 cent tolerance for currency issues)
         const tolerance = 0.01
-        if (Math.abs(calculatedTotal - total) > tolerance) {
+        if (Math.abs(expectedTotal - total) > tolerance) {
             return NextResponse.json({
-                error: 'Order total does not match item prices. Please refresh and try again.',
+                error: 'Order total does not match item prices and delivery charges. Please refresh and try again.',
                 code: 400
             }, { status: 400 })
         }
@@ -176,6 +178,7 @@ export async function POST(request) {
         const order = await prisma.order.create({
             data: {
                 total,
+                deliveryCharge: Number(deliveryCharge || 0),
                 userId: user.id,
                 storeId,
                 addressId,

@@ -32,6 +32,10 @@ const OrderSummaryWithClerk = ({ totalPrice, items }) => {
 const OrderSummaryContent = ({ totalPrice, items, user }) => {
 
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs.';
+    const subtotal = Number(totalPrice || 0);
+    const deliveryCharge = items.reduce((sum, item) => sum + (Number(item.deliveryCharge) || 0), 0);
+    const discountAmount = coupon ? (subtotal * (coupon.discount / 100)) : 0;
+    const totalWithDelivery = subtotal + deliveryCharge - discountAmount;
 
     const router = useRouter();
     const dispatch = useDispatch();
@@ -131,7 +135,8 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
         }
 
         const orderData = {
-            total: coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)) : totalPrice,
+            total: totalWithDelivery,
+            deliveryCharge,
             storeId,
             addressId: selectedAddress.id,
             paymentMethod,
@@ -267,13 +272,13 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
                 <div className='flex justify-between'>
                     <div className='flex flex-col gap-1 text-slate-400'>
                         <p>Subtotal:</p>
-                        <p>Shipping:</p>
+                        <p>Delivery:</p>
                         {coupon && <p>Coupon:</p>}
                     </div>
                     <div className='flex flex-col gap-1 font-medium text-right'>
                         <p>{currency}{totalPrice.toLocaleString()}</p>
-                        <p>Free</p>
-                        {coupon && <p>{`-${currency}${(coupon.discount / 100 * totalPrice).toFixed(2)}`}</p>}
+                        <p>{deliveryCharge > 0 ? `${currency}${deliveryCharge.toFixed(2)}` : 'Free'}</p>
+                        {coupon && <p>{`-${currency}${discountAmount.toFixed(2)}`}</p>}
                     </div>
                 </div>
                 {
@@ -293,7 +298,7 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
             </div>
             <div className='flex justify-between py-4'>
                 <p>Total:</p>
-                <p className='font-medium text-right'>{currency}{coupon ? (totalPrice - (coupon.discount / 100 * totalPrice)).toFixed(2) : totalPrice.toLocaleString()}</p>
+                <p className='font-medium text-right'>{currency}{totalWithDelivery.toFixed(2)}</p>
             </div>
             <button onClick={e => toast.promise(handlePlaceOrder(e), { loading: 'placing Order...' })} className='w-full bg-slate-700 text-white py-2.5 rounded hover:bg-slate-900 active:scale-95 transition-all'>Place Order</button>
 

@@ -52,7 +52,8 @@ function normalizeProductForResponse(product) {
     return {
         ...product,
         images: normalizeStringArrayField(product.images).map(image => toImageSrc(image)).filter(Boolean),
-        sizes: normalizeStringArrayField(product.sizes)
+        sizes: normalizeStringArrayField(product.sizes),
+        deliveryCharge: Number(product.deliveryCharge || 0)
     }
 }
 
@@ -104,6 +105,7 @@ export async function GET() {
                     description,
                     mrp,
                     price,
+                    "deliveryCharge",
                     images,
                     sizes,
                     category,

@@ -28,10 +28,11 @@ model Product {
     id          String   @id @default(cuid())
     name        String
     description String
-    mrp         Float
-    price       Float
-    images      String @default("[]")
-    category    String
+    mrp            Float
+    price          Float
+    deliveryCharge Float   @default(0)
+    images         String  @default("[]")
+    category       String
     sizes       String @default("[]")
     inStock     Boolean  @default(true)
     storeId     String
@@ -61,6 +62,7 @@ enum PaymentMethod {
 model Order {
     id              String        @id @default(cuid())
     total           Float
+    deliveryCharge  Float         @default(0)
     status          OrderStatus   @default(ORDER_PLACED)
     userId          String
     storeId         String
@@ -78,6 +80,7 @@ model Order {
     latitude        Float?
     longitude       Float?
     estimatedDelivery DateTime?
+    deliveredAt     DateTime?
 
     // Relations
     user    User    @relation("BuyerRelation", fields: [userId], references: [id])
