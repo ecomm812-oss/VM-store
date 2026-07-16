@@ -34,8 +34,6 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || 'Rs.';
     const subtotal = Number(totalPrice || 0);
     const deliveryCharge = items.reduce((sum, item) => sum + (Number(item.deliveryCharge) || 0), 0);
-    const discountAmount = coupon ? (subtotal * (coupon.discount / 100)) : 0;
-    const totalWithDelivery = subtotal + deliveryCharge - discountAmount;
 
     const router = useRouter();
     const dispatch = useDispatch();
@@ -48,6 +46,9 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
     const [couponCodeInput, setCouponCodeInput] = useState('');
     const [coupon, setCoupon] = useState('');
     const [loading, setLoading] = useState(true);
+
+    const discountAmount = coupon ? (subtotal * (coupon.discount / 100)) : 0;
+    const totalWithDelivery = subtotal + deliveryCharge - discountAmount;
 
     useEffect(() => {
         const fetchAddresses = async () => {
