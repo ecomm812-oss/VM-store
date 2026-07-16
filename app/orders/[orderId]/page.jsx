@@ -4,12 +4,16 @@ import { prisma } from '@/lib/prisma'
 export const revalidate = 0
 
 export default async function OrderDetailsPage({ params }) {
-    const { orderId } = await params
+    const { orderId } = params
 
     const order = await prisma.order.findUnique({
         where: { id: orderId },
         include: {
-            items: true,
+            orderItems: {
+                include: {
+                    product: true
+                }
+            },
             address: true
         }
     })
@@ -34,19 +38,21 @@ export default async function OrderDetailsPage({ params }) {
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                     <div>
                         <h2 className="font-medium">Delivery address</h2>
-                        <p className="text-sm text-slate-600 mt-2">{order.address?.addressLine || 'N/A'}</p>
+                        <p className="text-sm text-slate-600 mt-2">
+                            {order.address?.street || 'N/A'}, {order.address?.city || 'N/A'}, {order.address?.state || 'N/A'}, {order.address?.zip || 'N/A'}, {order.address?.country || 'N/A'}
+                        </p>
                     </div>
                     <div>
                         <h2 className="font-medium">Total</h2>
-                        <p className="text-sm text-slate-600 mt-2">₹{order.totalAmount || 0}</p>
+                        <p className="text-sm text-slate-600 mt-2">₹{order.total || 0}</p>
                     </div>
                 </div>
                 <div className="mt-8">
                     <h2 className="font-medium">Items</h2>
                     <ul className="mt-3 space-y-2">
-                        {order.items?.map((item) => (
+                        {order.orderItems?.map((item) => (
                             <li key={item.id} className="rounded-lg border border-slate-200 p-3 text-sm text-slate-600">
-                                {item.name} × {item.quantity}
+                                {item.product?.name || 'Product'} × {item.quantity}
                             </li>
                         ))}
                     </ul>

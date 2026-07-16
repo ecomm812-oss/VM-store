@@ -88,8 +88,8 @@ const Navbar = () => {
                     <div className="hidden sm:flex items-center gap-4 lg:gap-8 text-slate-600">
                         <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Home</Link>
                         <Link href="/shop" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Shop</Link>
-                        <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">About</Link>
-                        <Link href="/" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Contact</Link>
+                        <Link href="/about" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">About</Link>
+                        <Link href="/contact" className="transition-all duration-300 hover:text-slate-800 hover:scale-105">Contact</Link>
 
                         <form onSubmit={handleSearch} className="hidden xl:flex items-center w-xs text-sm gap-2 bg-slate-100 px-4 py-3 rounded-full transition-all duration-300 hover:bg-slate-200 focus-within:bg-white focus-within:shadow-md">
                             <Search size={18} className="text-slate-600 transition-colors duration-300" />
@@ -179,14 +179,14 @@ const Navbar = () => {
                                     Shop
                                 </Link>
                                 <Link
-                                    href="/"
+                                    href="/about"
                                     onClick={closeMobileMenu}
                                     className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
                                 >
                                     About
                                 </Link>
                                 <Link
-                                    href="/"
+                                    href="/contact"
                                     onClick={closeMobileMenu}
                                     className="block py-3 px-4 text-slate-700 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:translate-x-2"
                                 >
