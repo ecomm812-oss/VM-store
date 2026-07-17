@@ -28,23 +28,35 @@ export default function AdminStores() {
     }
 
     const toggleIsActive = async (storeId) => {
+        const currentStore = stores.find(store => store.id === storeId)
+        if (!currentStore) return 'Store not found'
+
+        const nextValue = !currentStore.isActive
+
+        setStores(prevStores => prevStores.map(store =>
+            store.id === storeId ? { ...store, isActive: nextValue } : store
+        ))
+
         try {
             const response = await fetch('/api/admin/stores', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ storeId, isActive: !stores.find(s => s.id === storeId)?.isActive })
+                body: JSON.stringify({ storeId, isActive: nextValue })
             })
 
-            if (response.ok) {
-                const updatedStore = await response.json()
-                setStores(stores.map(store =>
-                    store.id === storeId ? { ...store, isActive: updatedStore.isActive } : store
-                ))
-                return 'Store status updated successfully'
-            } else {
+            if (!response.ok) {
                 throw new Error('Failed to update store status')
             }
+
+            const updatedStore = await response.json()
+            setStores(prevStores => prevStores.map(store =>
+                store.id === storeId ? { ...store, isActive: updatedStore.isActive } : store
+            ))
+            return 'Store status updated successfully'
         } catch (error) {
+            setStores(prevStores => prevStores.map(store =>
+                store.id === storeId ? { ...store, isActive: currentStore.isActive } : store
+            ))
             console.error('Error updating store:', error)
             throw error
         }
@@ -69,7 +81,12 @@ export default function AdminStores() {
                             <div className="flex items-center gap-3 pt-2 flex-wrap">
                                 <p>Active</p>
                                 <label className="relative inline-flex items-center cursor-pointer text-gray-900">
-                                    <input type="checkbox" className="sr-only peer" onChange={() => toast.promise(toggleIsActive(store.id), { loading: "Updating data..." })} checked={store.isActive} />
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        onChange={() => toast.promise(toggleIsActive(store.id), { loading: 'Updating data...', success: 'Store updated', error: 'Failed to update store' })}
+                                        checked={Boolean(store.isActive)}
+                                    />
                                     <div className="w-9 h-5 bg-slate-300 rounded-full peer peer-checked:bg-green-600 transition-colors duration-200"></div>
                                     <span className="dot absolute left-1 top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out peer-checked:translate-x-4"></span>
                                 </label>
