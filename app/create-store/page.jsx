@@ -173,6 +173,18 @@ function CreateStoreWithClerk() {
         }
     }, [user])
 
+    useEffect(() => {
+        if (!alreadySubmitted || !['pending', 'rejected'].includes(status)) {
+            return
+        }
+
+        const intervalId = setInterval(() => {
+            fetchSellerStatus()
+        }, 5000)
+
+        return () => clearInterval(intervalId)
+    }, [alreadySubmitted, status])
+
     return !loading ? (
         <>
             {!alreadySubmitted ? (
@@ -357,6 +369,18 @@ function CreateStoreDevMode() {
     useEffect(() => {
         fetchSellerStatus()
     }, [])
+
+    useEffect(() => {
+        if (!alreadySubmitted || !['pending', 'rejected'].includes(status)) {
+            return
+        }
+
+        const intervalId = setInterval(() => {
+            fetchSellerStatus()
+        }, 5000)
+
+        return () => clearInterval(intervalId)
+    }, [alreadySubmitted, status])
 
     return !loading ? (
         <>
