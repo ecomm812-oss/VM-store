@@ -180,7 +180,9 @@ export async function POST(request) {
         const imageUrl = storedImage.url
 
         let imageAnalysis = null
-        if (process.env.GOOGLE_AI_KEY) {
+        const shouldAnalyzeImages = (process.env.ENABLE_IMAGE_AI_ANALYSIS || '').toLowerCase() === 'true'
+
+        if (shouldAnalyzeImages && process.env.GOOGLE_AI_KEY) {
             try {
                 console.log('Starting AI image analysis...')
                 imageAnalysis = await analyzeImage(buffer, file.type || 'image/jpeg')
@@ -209,7 +211,7 @@ export async function POST(request) {
                 }
             }
         } else {
-            console.log('GOOGLE_AI_KEY not configured, skipping image analysis')
+            console.log('Image analysis disabled by configuration, skipping analysis')
             imageAnalysis = {
                 description: '',
                 objects: [],
@@ -222,7 +224,7 @@ export async function POST(request) {
                 concerns: [],
                 recommendedAction: 'approve',
                 confidence: 0,
-                error: 'Analysis not configured'
+                error: 'Analysis skipped'
             }
         }
 

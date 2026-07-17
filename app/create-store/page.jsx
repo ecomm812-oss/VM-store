@@ -22,6 +22,7 @@ function CreateStoreWithClerk() {
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState("")
+    const [submitting, setSubmitting] = useState(false)
 
     const [storeInfo, setStoreInfo] = useState({
         name: "",
@@ -103,10 +104,11 @@ function CreateStoreWithClerk() {
             return
         }
 
+        setSubmitting(true)
+
         try {
             let logoUrl = 'https://via.placeholder.com/200' // Default logo
 
-            // Upload logo if selected
             if (storeInfo.logo) {
                 try {
                     const uploadData = await uploadImageFile(storeInfo.logo)
@@ -114,7 +116,8 @@ function CreateStoreWithClerk() {
                     console.log('Logo uploaded successfully:', logoUrl)
                 } catch (uploadError) {
                     console.error('Logo upload network error:', uploadError)
-                    throw new Error(uploadError?.message || 'Network error: Failed to upload logo. Check your connection and try again.')
+                    console.warn('Continuing with default logo after upload failure')
+                    logoUrl = 'https://via.placeholder.com/200'
                 }
             }
 
@@ -157,6 +160,8 @@ function CreateStoreWithClerk() {
             if (errorMessage.toLowerCase().includes('sign in')) {
                 router.push('/sign-in?redirect_url=/create-store')
             }
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -209,7 +214,13 @@ function CreateStoreWithClerk() {
                         <p>Address</p>
                         <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={5} placeholder="Enter your store address" className="border border-slate-300 outline-slate-400 w-full max-w-lg p-2 rounded resize-none" />
 
-                        <button className="bg-slate-800 text-white px-12 py-2 rounded mt-10 mb-40 active:scale-95 hover:bg-slate-900 transition ">Submit</button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="bg-slate-800 text-white px-12 py-2 rounded mt-10 mb-40 active:scale-95 hover:bg-slate-900 transition disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {submitting ? 'Submitting...' : 'Submit'}
+                        </button>
                     </form>
                 </div>
             ) : (
@@ -228,6 +239,7 @@ function CreateStoreDevMode() {
     const [status, setStatus] = useState("")
     const [loading, setLoading] = useState(true)
     const [message, setMessage] = useState("")
+    const [submitting, setSubmitting] = useState(false)
     const [storeInfo, setStoreInfo] = useState({
         name: "",
         username: "",
@@ -292,12 +304,20 @@ function CreateStoreDevMode() {
             return
         }
 
+        setSubmitting(true)
+
         try {
             let logoUrl = 'https://via.placeholder.com/200'
 
             if (storeInfo.logo) {
-                const uploadData = await uploadImageFile(storeInfo.logo)
-                logoUrl = uploadData.url
+                try {
+                    const uploadData = await uploadImageFile(storeInfo.logo)
+                    logoUrl = uploadData.url
+                } catch (uploadError) {
+                    console.error('Logo upload network error:', uploadError)
+                    console.warn('Continuing with default logo after upload failure')
+                    logoUrl = 'https://via.placeholder.com/200'
+                }
             }
 
             const response = await fetch('/api/store/create', {
@@ -329,6 +349,8 @@ function CreateStoreDevMode() {
         } catch (error) {
             console.error(error)
             toast.error(error?.message || 'Error submitting store')
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -376,7 +398,13 @@ function CreateStoreDevMode() {
                         <p>Address</p>
                         <textarea name="address" onChange={onChangeHandler} value={storeInfo.address} rows={5} placeholder="Enter your store address" className="border border-slate-300 outline-slate-400 w-full max-w-lg p-2 rounded resize-none" />
 
-                        <button className="bg-slate-800 text-white px-12 py-2 rounded mt-10 mb-40 active:scale-95 hover:bg-slate-900 transition ">Submit</button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="bg-slate-800 text-white px-12 py-2 rounded mt-10 mb-40 active:scale-95 hover:bg-slate-900 transition disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                            {submitting ? 'Submitting...' : 'Submit'}
+                        </button>
                     </form>
                 </div>
             ) : (
