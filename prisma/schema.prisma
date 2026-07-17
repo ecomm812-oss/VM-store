@@ -43,6 +43,12 @@ model Product {
     store      Store       @relation(fields: [storeId], references: [id])
     orderItems OrderItem[]
     rating     Rating[]
+
+    // Indexes for frequently queried fields
+    @@index([category])
+    @@index([storeId])
+    @@index([inStock])
+    @@index([createdAt])
 }
 
 enum OrderStatus {
@@ -86,6 +92,12 @@ model Order {
     user    User    @relation("BuyerRelation", fields: [userId], references: [id])
     store   Store   @relation(fields: [storeId], references: [id])
     address Address @relation(fields: [addressId], references: [id])
+
+    // Indexes for frequently queried fields
+    @@index([userId])
+    @@index([storeId])
+    @@index([status])
+    @@index([createdAt])
 }
 
 // Required for creating an OrderItem: orderId, productId, quantity, price

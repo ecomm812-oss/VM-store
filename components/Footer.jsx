@@ -24,7 +24,7 @@ const Footer = () => {
             title: "WEBSITE?",
             links: [
                 { text: "Home", path: '/', icon: null },
-                { text: "Privacy Policy", path: '/', icon: null },
+                { text: "Privacy Policy", path: 'https://vmcart.in/', icon: null, external: true },
                 { text: "Become Plus Member", path: '/pricing', icon: null },
                 { text: "Create Your Store", path: '/create-store', icon: null },
             ]

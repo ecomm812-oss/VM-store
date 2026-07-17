@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, isAdminUser, createSecureErrorResponse } from '@/lib/security'
 
+// Cache store listings for 2 minutes
+const CACHE_HEADERS = {
+    'Cache-Control': 'private, max-age=120, s-maxage=300'
+}
+
 export async function GET() {
     try {
         // Check admin authentication
@@ -11,7 +16,20 @@ export async function GET() {
         }
 
         const stores = await prisma.store.findMany({
-            include: {
+            select: {
+                id: true,
+                userId: true,
+                name: true,
+                description: true,
+                username: true,
+                address: true,
+                status: true,
+                isActive: true,
+                logo: true,
+                email: true,
+                contact: true,
+                createdAt: true,
+                updatedAt: true,
                 user: {
                     select: {
                         id: true,
@@ -21,6 +39,7 @@ export async function GET() {
                     }
                 },
                 Product: {
+                    take: 5,
                     select: {
                         id: true,
                         name: true,
@@ -29,6 +48,7 @@ export async function GET() {
                     }
                 },
                 Order: {
+                    take: 5,
                     select: {
                         id: true,
                         total: true,
@@ -39,7 +59,14 @@ export async function GET() {
             }
         })
 
-        return NextResponse.json(stores)
+        const response = NextResponse.json(stores)
+        
+        // Add cache headers
+        Object.entries(CACHE_HEADERS).forEach(([key, value]) => {
+            response.headers.set(key, value)
+        })
+        
+        return response
     } catch (error) {
         console.error('Admin stores error:', error)
         return createSecureErrorResponse('fetching stores', 500)
