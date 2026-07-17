@@ -1,5 +1,5 @@
 import { clerkMiddleware } from '@clerk/nextjs/server'
-import { NextFetchEvent, NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 function hasValidClerkConfig() {
   const publishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
@@ -8,16 +8,18 @@ function hasValidClerkConfig() {
   return publishable.startsWith('pk_') && secret.startsWith('sk_')
 }
 
-const clerkHandler = clerkMiddleware(() => NextResponse.next())
-
-export default function middleware(request: NextRequest, event: NextFetchEvent) {
+export default clerkMiddleware(async (auth, request) => {
+  // If Clerk is not properly configured, just pass through
   if (!hasValidClerkConfig()) {
     return NextResponse.next()
   }
 
-  return clerkHandler(request, event)
-}
+  // Clerk middleware will handle authentication
+  return NextResponse.next()
+})
 
 export const config = {
-  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.svg|.*\\.jpg|.*\\.jpeg|.*\\.webp).*)',
+  ],
 }
