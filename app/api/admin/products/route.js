@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, revalidatePath } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdminUser, createSecureErrorResponse } from '@/lib/security'
 
@@ -101,6 +101,8 @@ export async function PATCH(request) {
                 }
             }
         })
+
+        revalidatePath('/')
 
         return NextResponse.json(updatedProduct)
     } catch (error) {
