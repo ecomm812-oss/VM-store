@@ -77,15 +77,19 @@ export async function PATCH(request) {
             }
         }
 
-        const { productId, inStock } = await request.json()
+        const { productId, inStock, price } = await request.json()
 
-        if (!productId || typeof inStock !== 'boolean') {
+        if (!productId || (typeof inStock !== 'boolean' && typeof price !== 'number')) {
             return createSecureErrorResponse('product update', 400)
         }
 
+        const updateData = {}
+        if (typeof inStock === 'boolean') updateData.inStock = inStock
+        if (typeof price === 'number') updateData.price = price
+
         const updatedProduct = await prisma.product.update({
             where: { id: productId },
-            data: { inStock },
+            data: updateData,
             include: {
                 store: {
                     select: {

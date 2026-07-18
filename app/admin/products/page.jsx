@@ -7,6 +7,8 @@ import { toast } from 'react-hot-toast'
 export default function AdminProductsPage() {
     const [products, setProducts] = useState([])
     const [loading, setLoading] = useState(true)
+    const [editedPrices, setEditedPrices] = useState({})
+    const [savingPriceId, setSavingPriceId] = useState(null)
 
     const fetchProducts = async () => {
         try {
@@ -45,6 +47,48 @@ export default function AdminProductsPage() {
         } catch (error) {
             console.error('Failed to update product:', error)
             toast.error('Unable to update product')
+        }
+    }
+
+    const handlePriceChange = (productId, value) => {
+        setEditedPrices(prev => ({ ...prev, [productId]: value }))
+    }
+
+    const updatePrice = async (productId, rawValue) => {
+        const price = Number(rawValue)
+
+        if (Number.isNaN(price) || price < 0) {
+            toast.error('Enter a valid price')
+            return
+        }
+
+        try {
+            setSavingPriceId(productId)
+            const response = await fetch('/api/admin/products', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productId, price })
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to update product price')
+            }
+
+            const updatedProduct = await response.json()
+            setProducts(products.map(product =>
+                product.id === productId ? { ...product, price: updatedProduct.price } : product
+            ))
+            setEditedPrices(prev => {
+                const next = { ...prev }
+                delete next[productId]
+                return next
+            })
+            toast.success('Product price updated')
+        } catch (error) {
+            console.error('Failed to update product price:', error)
+            toast.error('Unable to update price')
+        } finally {
+            setSavingPriceId(null)
         }
     }
 
@@ -95,7 +139,25 @@ export default function AdminProductsPage() {
                                             <p className="text-xs text-slate-500">@{product.store?.username || 'unknown'}</p>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3">₹{Number(product.price || 0).toFixed(2)}</td>
+                                    <td className="px-4 py-3">
+                                        <div className="flex items-center gap-2">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={editedPrices[product.id] !== undefined ? editedPrices[product.id] : product.price?.toString() ?? '0'}
+                                                onChange={(e) => handlePriceChange(product.id, e.target.value)}
+                                                className="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 outline-none focus:border-slate-400"
+                                            />
+                                            <button
+                                                onClick={() => updatePrice(product.id, editedPrices[product.id] ?? product.price)}
+                                                disabled={savingPriceId === product.id}
+                                                className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                                {savingPriceId === product.id ? 'Saving...' : 'Save'}
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td className="px-4 py-3">
                                         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${product.inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                             {product.inStock ? 'In stock' : 'Out of stock'}
