@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import ProductCard from '@/components/ProductCard'
-import { getPublicShopProducts, countPublicShopProducts } from '@/lib/product-service'
+import { getPublicShopProducts, countPublicShopProducts, getPublicShopStores } from '@/lib/product-service'
 
 export const revalidate = 300
 
@@ -13,7 +13,7 @@ export default async function Shop({ searchParams }) {
     const pageSize = 24
     const skip = (page - 1) * pageSize
 
-    const [products, totalCount] = await Promise.all([
+    const [products, totalCount, stores] = await Promise.all([
         getPublicShopProducts({
             search: search || undefined,
             category: category || undefined,
@@ -23,12 +23,17 @@ export default async function Shop({ searchParams }) {
         countPublicShopProducts({
             search: search || undefined,
             category: category || undefined
+        }),
+        getPublicShopStores({
+            search: search || undefined,
+            take: 6
         })
     ])
 
     const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
 
     const displayTitle = category || (search ? `Search: ${search}` : 'All')
+    const hasSearch = Boolean(search)
 
     return (
         <div className="min-h-[70vh] mx-6">
@@ -41,6 +46,38 @@ export default async function Shop({ searchParams }) {
                     ) : null}
                     {displayTitle} <span className="text-slate-700 font-medium">Products</span>
                 </h1>
+
+                {hasSearch && stores.length > 0 ? (
+                    <section className="mb-10">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-slate-700">Matching Stores</h2>
+                            <span className="text-sm text-slate-500">{stores.length} found</span>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {stores.map((store) => (
+                                <Link key={store.id} href={`/shop/${store.username}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-slate-100">
+                                            {store.logo ? (
+                                                <img src={store.logo} alt={store.name} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <span className="text-sm font-semibold text-slate-600">{store.name?.charAt(0) || 'S'}</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-slate-800">{store.name}</h3>
+                                            <p className="text-sm text-slate-500">@{store.username}</p>
+                                        </div>
+                                    </div>
+                                    {store.description ? (
+                                        <p className="mt-3 text-sm text-slate-600">{store.description}</p>
+                                    ) : null}
+                                </Link>
+                            ))}
+                        </div>
+                    </section>
+                ) : null}
+
                 <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-6">
                     {products.length > 0 ? (
                         products.map((product) => <ProductCard key={product.id} product={product} />)

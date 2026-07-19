@@ -60,7 +60,15 @@ const Navbar = () => {
 
     const handleSearch = (e) => {
         e.preventDefault()
-        router.push(`/shop?search=${search}`)
+
+        const trimmedSearch = search.trim()
+        if (!trimmedSearch) {
+            router.push('/shop')
+        } else {
+            router.push(`/shop?search=${encodeURIComponent(trimmedSearch)}`)
+        }
+
+        setSearch('')
         setIsMobileMenuOpen(false) // Close mobile menu after search
     }
 
@@ -93,7 +101,7 @@ const Navbar = () => {
 
                         <form onSubmit={handleSearch} className="hidden xl:flex items-center w-xs text-sm gap-2 bg-slate-100 px-4 py-3 rounded-full transition-all duration-300 hover:bg-slate-200 focus-within:bg-white focus-within:shadow-md">
                             <Search size={18} className="text-slate-600 transition-colors duration-300" />
-                            <input className="w-full bg-transparent outline-none placeholder-slate-600 transition-colors duration-300" type="text" placeholder="Search products" value={search} onChange={(e) => setSearch(e.target.value)} required />
+                            <input className="w-full bg-transparent outline-none placeholder-slate-600 transition-colors duration-300" type="text" placeholder="Search stores & products" value={search} onChange={(e) => setSearch(e.target.value)} required />
                         </form>
 
                         <Link href="/cart" className="relative flex items-center gap-2 text-slate-600 transition-all duration-300 hover:text-slate-800 hover:scale-105 group">
@@ -154,7 +162,7 @@ const Navbar = () => {
                                     <input
                                         className="w-full bg-transparent outline-none placeholder-slate-600"
                                         type="text"
-                                        placeholder="Search products"
+                                        placeholder="Search stores & products"
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         required
