@@ -2,6 +2,61 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
 
+export async function GET(request) {
+    try {
+        const url = new URL(request.url)
+        const productId = url.searchParams.get('productId')
+
+        if (!productId) {
+            return NextResponse.json({ eligible: false }, { status: 400 })
+        }
+
+        const clerkUser = await getCurrentUser()
+        if (!clerkUser?.id) {
+            return NextResponse.json({ eligible: false }, { status: 401 })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { clerkId: clerkUser.id }
+        })
+
+        if (!user) {
+            return NextResponse.json({ eligible: false }, { status: 404 })
+        }
+
+        const deliveredOrderItems = await prisma.orderItem.findMany({
+            where: {
+                productId,
+                order: {
+                    userId: user.id,
+                    status: 'DELIVERED'
+                }
+            }
+        })
+
+        for (const item of deliveredOrderItems) {
+            const existingRating = await prisma.rating.findUnique({
+                where: {
+                    userId_productId_orderId: {
+                        userId: user.id,
+                        productId,
+                        orderId: item.orderId
+                    }
+                }
+            })
+
+            if (!existingRating) {
+                return NextResponse.json({ eligible: true, orderId: item.orderId })
+            }
+        }
+
+        return NextResponse.json({ eligible: false })
+    } catch (error) {
+        console.error('[API] Rating eligibility error:', error)
+        return NextResponse.json({ eligible: false }, { status: 500 })
+    }
+}
+
 export async function POST(request) {
     try {
         const clerkUser = await getCurrentUser()

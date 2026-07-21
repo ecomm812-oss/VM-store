@@ -2,16 +2,39 @@
 import { ArrowRight, StarIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import RatingModal from './RatingModal'
 
 const ProductDescription = ({ product }) => {
 
     const [selectedTab, setSelectedTab] = useState('Description')
+    const [ratingModal, setRatingModal] = useState(null)
+    const [reviewEligibility, setReviewEligibility] = useState(null)
     const reviews = Array.isArray(product?.rating) ? product.rating : []
     const averageRating = reviews.length > 0
         ? reviews.reduce((acc, item) => acc + (item.rating || 0), 0) / reviews.length
         : 0;
     const reviewCount = reviews.length;
+
+    useEffect(() => {
+        if (!product?.id) return
+
+        const fetchEligibility = async () => {
+            try {
+                const response = await fetch(`/api/rating?productId=${product.id}`)
+                if (response.ok) {
+                    const data = await response.json()
+                    setReviewEligibility(data)
+                } else {
+                    setReviewEligibility({ eligible: false })
+                }
+            } catch (error) {
+                setReviewEligibility({ eligible: false })
+            }
+        }
+
+        fetchEligibility()
+    }, [product?.id])
 
     return (
         <div className="my-18 text-sm text-slate-600">
@@ -73,15 +96,29 @@ const ProductDescription = ({ product }) => {
                     ) : (
                         <p className="text-slate-500">No reviews yet</p>
                     )}
+                    <div className="mt-6">
+                        {reviewEligibility?.eligible ? (
+                            <button
+                                onClick={() => setRatingModal({ productId: product.id, orderId: reviewEligibility.orderId })}
+                                className="rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 transition"
+                            >
+                                Rate this product
+                            </button>
+                        ) : reviewEligibility === null ? (
+                            <p className="text-sm text-slate-500">Checking eligibility...</p>
+                        ) : (
+                            <p className="text-sm text-slate-500">Reviews can be submitted after a delivered order.</p>
+                        )}
+                    </div>
                 </div>
             )}
+            {ratingModal && <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />}
 
             {/* Store Page */}
             {product?.store && (
                 <div className="flex gap-3 mt-14">
                     <Image src={product.store.logo || '/placeholder.png'} alt="" className="size-11 rounded-full ring ring-slate-400" width={100} height={100} />
                     <div>
-                        <p className="font-medium text-slate-600">Product by {product.store.name || 'Store'}</p>
                         <Link href={`/shop/${product.store.username}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
                     </div>
                 </div>
