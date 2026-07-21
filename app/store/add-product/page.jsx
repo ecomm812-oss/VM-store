@@ -6,7 +6,7 @@ import { uploadImageFile, validateImageFile } from "@/lib/upload-client"
 
 export default function StoreAddProduct() {
 
-    const categories = ['Electronics', 'Clothing', 'Home & Kitchen', 'Beauty & Health', 'Toys & Games', 'Sports & Outdoors', 'Books & Media', 'Food & Drink', 'Hobbies & Crafts', 'Others']
+    const categories = ['Headphones', 'Speakers', 'Wotch', 'Earbuds', 'Mouse', 'Decoration', 'Electronics', 'Clothing', 'Home & Kitchen', 'Beauty & Health', 'Toys & Games', 'Sports & Outdoors', 'Books & Media', 'Food & Drink', 'Hobbies & Crafts', 'Others']
 
     const [images, setImages] = useState(['', '', '', ''])
     const [uploadedFiles, setUploadedFiles] = useState([null, null, null, null])

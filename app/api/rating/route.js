@@ -29,7 +29,9 @@ export async function GET(request) {
                 productId,
                 order: {
                     userId: user.id,
-                    status: 'DELIVERED'
+                    status: {
+                        in: ['DELIVERED', 'delivered']
+                    }
                 }
             }
         })
@@ -104,7 +106,9 @@ export async function POST(request) {
             where: {
                 id: orderId,
                 userId: user.id,
-                status: 'DELIVERED'
+                status: {
+                    in: ['DELIVERED', 'delivered']
+                }
             }
         })
 

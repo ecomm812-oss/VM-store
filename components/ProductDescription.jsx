@@ -26,12 +26,12 @@ const ProductDescription = ({ product }) => {
                 const response = await fetch(`/api/rating?productId=${product.id}`)
                 if (response.ok) {
                     const data = await response.json()
-                    setReviewEligibility(data)
+                    setReviewEligibility(data?.eligible ? data : { eligible: false, message: 'Reviews can be submitted after a delivered order.' })
                 } else {
-                    setReviewEligibility({ eligible: false })
+                    setReviewEligibility({ eligible: false, message: 'Please sign in to leave a review.' })
                 }
             } catch (error) {
-                setReviewEligibility({ eligible: false })
+                setReviewEligibility({ eligible: false, message: 'Unable to check review eligibility right now.' })
             }
         }
 
@@ -114,7 +114,7 @@ const ProductDescription = ({ product }) => {
                         ) : reviewEligibility === null ? (
                             <p className="text-sm text-slate-500">Checking eligibility...</p>
                         ) : (
-                            <p className="text-sm text-slate-500">Reviews can be submitted after a delivered order.</p>
+                            <p className="text-sm text-slate-500">{reviewEligibility?.message || 'Reviews can be submitted after a delivered order.'}</p>
                         )}
                     </div>
                 </div>

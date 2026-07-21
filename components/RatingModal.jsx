@@ -12,10 +12,14 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
 
     const handleSubmit = async () => {
         if (rating < 1 || rating > 5) {
-            return toast('Please select a rating');
+            toast('Please select a rating');
+            return;
         }
-        if (review.length < 5) {
-            return toast('write a short review');
+
+        const normalizedReview = review.trim();
+        if (normalizedReview && normalizedReview.length < 3) {
+            toast('Please write at least 3 characters if you want to add a comment');
+            return;
         }
 
         try {
@@ -26,7 +30,7 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                 },
                 body: JSON.stringify({
                     rating,
-                    review,
+                    review: normalizedReview,
                     productId: ratingModal.productId,
                     orderId: ratingModal.orderId
                 })
@@ -66,9 +70,10 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
                         />
                     ))}
                 </div>
+                <label className='block text-sm font-medium text-slate-600 mb-2'>Your comment</label>
                 <textarea
                     className='w-full p-2 border border-gray-300 rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-green-400 transition-all duration-300'
-                    placeholder='Write your review (optional)'
+                    placeholder='Share your experience about this product (optional)'
                     rows='4'
                     value={review}
                     onChange={(e) => setReview(e.target.value)}

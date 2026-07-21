@@ -91,13 +91,13 @@ const ProductDetails = ({ product }) => {
             <div className="flex max-sm:flex-col-reverse gap-3">
                 <div className="flex sm:flex-col gap-3">
                     {images.length > 0 && images.map((image, index) => (
-                        <div key={index} onClick={() => setMainImage(images[index])} className="bg-slate-100 flex items-center justify-center size-26 rounded-lg group cursor-pointer">
-                            <Image src={image} className="group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} />
+                        <div key={index} onClick={() => setMainImage(images[index])} className="bg-slate-100 overflow-hidden flex items-center justify-center size-26 rounded-lg group cursor-pointer">
+                            <Image src={image} className="object-cover group-hover:scale-103 group-active:scale-95 transition" alt="" width={45} height={45} />
                         </div>
                     ))}
                 </div>
-                <div className="flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg ">
-                    <Image src={mainImage} alt="" width={250} height={250} />
+                <div className="relative flex justify-center items-center h-100 sm:size-113 bg-slate-100 rounded-lg overflow-hidden ">
+                    <Image src={mainImage} alt="" fill className="object-cover" />
                 </div>
             </div>
             <div className="flex-1">
