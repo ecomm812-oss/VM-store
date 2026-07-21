@@ -136,7 +136,7 @@ export async function GET() {
     }
 }
 
-export async function PUT(request) {
+export async function PATCH(request) {
     let clerkUser
     let requestBody
 
@@ -170,6 +170,10 @@ export async function PUT(request) {
             return NextResponse.json({ error: 'Product ID is required' }, { status: 400 })
         }
 
+        if (typeof inStock !== 'boolean') {
+            return NextResponse.json({ error: 'inStock must be a boolean' }, { status: 400 })
+        }
+
         // Verify the product belongs to the user's store
         const product = await prisma.product.findFirst({
             where: {
@@ -188,7 +192,7 @@ export async function PUT(request) {
 
         const updatedProduct = await prisma.product.update({
             where: { id: productId },
-            data: { inStock: inStock },
+            data: { inStock },
             select: {
                 id: true,
                 inStock: true

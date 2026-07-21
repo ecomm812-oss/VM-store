@@ -50,7 +50,7 @@ export default function StoreManageProducts() {
         if (!product) throw new Error('Product not found')
 
         const response = await fetch('/api/products/store', {
-            method: 'PUT',
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },

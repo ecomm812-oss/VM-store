@@ -61,52 +61,58 @@ export async function GET() {
     }
 }
 
-export async function PATCH(request) {
-    try {
-        const isDevMode = process.env.NODE_ENV !== 'production' && (
-            !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-            !process.env.CLERK_SECRET_KEY ||
-            process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
-            process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
-        )
+async function updateProduct(request) {
+    const isDevMode = process.env.NODE_ENV !== 'production' && (
+        !process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+        !process.env.CLERK_SECRET_KEY ||
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === 'your_clerk_key_here' ||
+        process.env.CLERK_SECRET_KEY === 'your_clerk_secret_here'
+    )
 
-        if (!isDevMode) {
-            const isAdmin = await isAdminUser()
-            if (!isAdmin) {
-                return createSecureErrorResponse('admin access', 403)
-            }
+    if (!isDevMode) {
+        const isAdmin = await isAdminUser()
+        if (!isAdmin) {
+            return createSecureErrorResponse('admin access', 403)
         }
+    }
 
-        const { productId, inStock, price } = await request.json()
+    const { productId, inStock, price } = await request.json()
 
-        if (!productId || (typeof inStock !== 'boolean' && typeof price !== 'number')) {
-            return createSecureErrorResponse('product update', 400)
-        }
+    if (!productId || (typeof inStock !== 'boolean' && typeof price !== 'number')) {
+        return createSecureErrorResponse('product update', 400)
+    }
 
-        const updateData = {}
-        if (typeof inStock === 'boolean') updateData.inStock = inStock
-        if (typeof price === 'number') updateData.price = price
+    const updateData = {}
+    if (typeof inStock === 'boolean') updateData.inStock = inStock
+    if (typeof price === 'number') updateData.price = price
 
-        const updatedProduct = await prisma.product.update({
-            where: { id: productId },
-            data: updateData,
-            include: {
-                store: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        isActive: true
-                    }
+    const updatedProduct = await prisma.product.update({
+        where: { id: productId },
+        data: updateData,
+        include: {
+            store: {
+                select: {
+                    id: true,
+                    name: true,
+                    username: true,
+                    isActive: true
                 }
             }
-        })
+        }
+    })
 
-        revalidatePath('/')
+    revalidatePath('/')
 
-        return NextResponse.json(updatedProduct)
+    return NextResponse.json(updatedProduct)
+}
+
+export async function PATCH(request) {
+    try {
+        return await updateProduct(request)
     } catch (error) {
         console.error('Admin products update error:', error)
         return createSecureErrorResponse('updating product', 500)
     }
 }
+
+export const PUT = PATCH
