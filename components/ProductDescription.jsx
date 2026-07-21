@@ -11,13 +11,15 @@ const ProductDescription = ({ product }) => {
     const [ratingModal, setRatingModal] = useState(null)
     const [reviewEligibility, setReviewEligibility] = useState(null)
     const reviews = Array.isArray(product?.rating) ? product.rating : []
-    const averageRating = reviews.length > 0
-        ? reviews.reduce((acc, item) => acc + (item.rating || 0), 0) / reviews.length
-        : 0;
-    const reviewCount = reviews.length;
+    const reviewCount = typeof product?._count?.rating === 'number' ? product._count.rating : reviews.length
+    const averageRating = typeof product?.ratingAvg === 'number'
+        ? product.ratingAvg
+        : reviews.length > 0
+            ? reviews.reduce((acc, item) => acc + (item.rating || 0), 0) / reviews.length
+            : 0;
 
     useEffect(() => {
-        if (!product?.id) return
+        if (!product?.id || selectedTab !== 'Reviews') return
 
         const fetchEligibility = async () => {
             try {
@@ -34,7 +36,7 @@ const ProductDescription = ({ product }) => {
         }
 
         fetchEligibility()
-    }, [product?.id])
+    }, [product?.id, selectedTab])
 
     return (
         <div className="my-18 text-sm text-slate-600">
@@ -78,21 +80,26 @@ const ProductDescription = ({ product }) => {
                         </div>
                     </div>
                     {reviewCount > 0 ? (
-                        reviews.map((item, index) => (
-                            <div key={index} className="flex gap-5 mb-10">
-                                <Image src={item?.user?.image || '/placeholder.png'} alt="" className="size-10 rounded-full" width={100} height={100} />
-                                <div>
-                                    <div className="flex items-center" >
-                                        {Array(5).fill('').map((_, index) => (
-                                            <StarIcon key={index} size={18} className='text-transparent mt-0.5' fill={item.rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
-                                        ))}
+                        <>
+                            {reviewCount > reviews.length ? (
+                                <p className="text-sm text-slate-500 mb-4">Showing latest {reviews.length} of {reviewCount} reviews.</p>
+                            ) : null}
+                            {reviews.map((item, index) => (
+                                <div key={index} className="flex gap-5 mb-10">
+                                    <Image src={item?.user?.image || '/placeholder.png'} alt="" className="size-10 rounded-full" width={100} height={100} />
+                                    <div>
+                                        <div className="flex items-center" >
+                                            {Array(5).fill('').map((_, index) => (
+                                                <StarIcon key={index} size={18} className='text-transparent mt-0.5' fill={item.rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
+                                            ))}
+                                        </div>
+                                        <p className="text-sm max-w-lg my-4">{item.review}</p>
+                                        <p className="font-medium text-slate-800">{item?.user?.name || 'Anonymous'}</p>
+                                        <p className="mt-3 font-light">{item?.createdAt ? new Date(item.createdAt).toDateString() : 'Date unavailable'}</p>
                                     </div>
-                                    <p className="text-sm max-w-lg my-4">{item.review}</p>
-                                    <p className="font-medium text-slate-800">{item?.user?.name || 'Anonymous'}</p>
-                                    <p className="mt-3 font-light">{item?.createdAt ? new Date(item.createdAt).toDateString() : 'Date unavailable'}</p>
                                 </div>
-                            </div>
-                        ))
+                            ))}
+                        </>
                     ) : (
                         <p className="text-slate-500">No reviews yet</p>
                     )}

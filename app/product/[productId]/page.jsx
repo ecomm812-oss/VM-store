@@ -67,9 +67,33 @@ async function loadProduct(productId) {
     try {
         const product = await prisma.product.findUnique({
             where: { id: productId },
-            include: {
-                store: true,
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                mrp: true,
+                price: true,
+                deliveryCharge: true,
+                images: true,
+                sizes: true,
+                category: true,
+                inStock: true,
+                storeId: true,
+                createdAt: true,
+                updatedAt: true,
+                store: {
+                    select: {
+                        id: true,
+                        name: true,
+                        logo: true,
+                        username: true
+                    }
+                },
                 rating: {
+                    take: 5,
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
                     include: {
                         user: {
                             select: {
@@ -77,16 +101,34 @@ async function loadProduct(productId) {
                                 image: true
                             }
                         }
-                    },
-                    orderBy: {
-                        createdAt: 'desc'
+                    }
+                },
+                _count: {
+                    select: {
+                        rating: true
                     }
                 }
             }
         })
 
         if (product) {
-            return normalizeProductResponse(product)
+            const ratingStats = await prisma.rating.aggregate({
+                where: { productId },
+                _avg: {
+                    rating: true
+                },
+                _count: {
+                    _all: true
+                }
+            })
+
+            return normalizeProductResponse({
+                ...product,
+                ratingAvg: Number(ratingStats._avg.rating || 0),
+                _count: {
+                    rating: ratingStats._count._all
+                }
+            })
         }
     } catch (error) {
         if (isProductColumnTypeMismatch(error)) {
