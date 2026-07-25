@@ -123,10 +123,22 @@ export default function StoreAddProduct() {
     const onSubmitHandler = async (e) => {
         e.preventDefault()
         
-        // Validate that at least one image is provided
-        const hasImages = images.some(img => img.trim() !== '') || uploadedFiles.some(file => file !== null)
+        const hasImages = images.some(img => String(img || '').trim() !== '') || uploadedFiles.some(file => file !== null)
         if (!hasImages) {
             throw new Error('Please upload at least one image or enter an image URL')
+        }
+
+        const cleanProductInfo = {
+            ...productInfo,
+            name: String(productInfo.name || '').trim(),
+            description: String(productInfo.description || '').trim(),
+            mrp: Number(productInfo.mrp || 0),
+            price: Number(productInfo.price || 0),
+            deliveryCharge: Number(productInfo.deliveryCharge || 0),
+            category: String(productInfo.category || '').trim(),
+            images: images
+                .map(img => String(img || '').trim())
+                .filter(Boolean)
         }
         
         setLoading(true)
@@ -136,10 +148,7 @@ export default function StoreAddProduct() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    ...productInfo,
-                    images: images.filter(img => img.trim() !== '')
-                })
+                body: JSON.stringify(cleanProductInfo)
             })
             if (response.ok) {
                 const product = await response.json()
