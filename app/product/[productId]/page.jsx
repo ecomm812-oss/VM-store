@@ -1,10 +1,36 @@
 import ProductDescription from '@/components/ProductDescription'
 import ProductDetails from '@/components/ProductDetails'
+import StructuredData from '@/components/StructuredData'
 import { prisma } from '@/lib/prisma'
 import { normalizeProductResponse } from '@/lib/product-utils'
 import { getDevProductById, shouldUseDevProductFallback } from '@/lib/dev-product-fallback'
 
 export const revalidate = 60
+
+export async function generateMetadata({ params }) {
+    const { productId } = await params
+    const product = await loadProduct(productId)
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'
+
+    if (!product) {
+        return {
+            title: 'Product Not Found | VM Cart',
+            description: 'This product is unavailable right now. Explore similar products on VM Cart.',
+            alternates: { canonical: `${siteUrl}/product/${productId}` },
+        }
+    }
+
+    return {
+        title: `${product.name} | Buy Online on VM Cart`,
+        description: `Buy ${product.name} online on VM Cart. Shop from local sellers with great offers and reliable delivery.`,
+        alternates: { canonical: `${siteUrl}/product/${productId}` },
+        openGraph: {
+            title: `${product.name} | Buy Online on VM Cart`,
+            description: `Buy ${product.name} online on VM Cart. Shop from local sellers with great offers and reliable delivery.`,
+            images: product.images?.[0] ? [product.images[0]] : [],
+        },
+    }
+}
 
 function createFallbackProduct(productId) {
     return {
@@ -163,8 +189,24 @@ export default async function Product({ params }) {
         )
     }
 
+    const productSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: product.name,
+        description: product.description,
+        image: product.images || [],
+        offers: {
+            '@type': 'Offer',
+            priceCurrency: 'INR',
+            price: product.price,
+            availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'}/product/${product.id}`,
+        },
+    }
+
     return (
         <div className="mx-6">
+            <StructuredData data={productSchema} />
             <div className="max-w-7xl mx-auto">
                 <div className="text-gray-600 text-sm mt-8 mb-5">Home / Products / {product.category}</div>
                 <ProductDetails product={product} />

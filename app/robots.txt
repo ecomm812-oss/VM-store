@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Public content
+Allow: /about
+Allow: /shop
+Allow: /cart
+Allow: /contact
+Allow: /pricing
+Allow: /create-store
+Allow: /subscription
+Allow: /orders
+
+# Do not index private/admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /store/
+
+Sitemap: https://vmcart.com/sitemap.xml

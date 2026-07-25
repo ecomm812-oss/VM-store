@@ -11,9 +11,37 @@ import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com';
+
 export const metadata = {
-    title: "VM Cart - Shop smarter",
-    description: "Discover and shop from independent sellers on VM Cart. Find unique products, local stores, and great deals with fast shipping and easy returns.",
+    metadataBase: new URL(siteUrl),
+    title: {
+        default: 'VM Cart | Shop Local & Discover Unique Products',
+        template: '%s | VM Cart'
+    },
+    description: 'Discover and shop from independent sellers on VM Cart. Find unique products, local stores, and great deals with fast shipping and easy returns.',
+    keywords: ['online shopping', 'local stores', 'marketplace', 'fashion', 'electronics', 'home decor'],
+    alternates: {
+        canonical: siteUrl,
+    },
+    openGraph: {
+        title: 'VM Cart | Shop Local & Discover Unique Products',
+        description: 'Discover and shop from independent sellers on VM Cart. Find unique products, local stores, and great deals with fast shipping and easy returns.',
+        url: siteUrl,
+        siteName: 'VM Cart',
+        type: 'website',
+        images: [`${siteUrl}/assets/pdp.png`],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'VM Cart | Shop Local & Discover Unique Products',
+        description: 'Discover and shop from independent sellers on VM Cart. Find unique products, local stores, and great deals with fast shipping and easy returns.',
+        images: [`${siteUrl}/assets/pdp.png`],
+    },
+    robots: {
+        index: true,
+        follow: true,
+    },
 };
 
 const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
