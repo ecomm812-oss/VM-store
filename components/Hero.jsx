@@ -16,7 +16,7 @@ const Hero = () => {
                 <div className='relative flex-1 flex flex-col bg-green-300 rounded-3xl xl:min-h-100 group animate-fadeInUp'>
                     <div className='p-5 sm:p-16'>
                         <div className='inline-flex items-center gap-3 bg-green-300 text-green-600 pr-4 p-1 rounded-full text-xs sm:text-sm transition-all duration-300 hover:bg-green-400'>
-                            <span className='bg-green-600 px-3 py-1 max-sm:ml-1 rounded-full text-white text-xs'>NEWS</span> Free Shipping on Orders Above ₹50! <ChevronRightIcon className='group-hover:ml-2 transition-all' size={16} />
+                            <span className='bg-green-600 px-3 py-1 max-sm:ml-1 rounded-full text-white text-xs'>NEWS</span> New arrivals are now live. <ChevronRightIcon className='group-hover:ml-2 transition-all' size={16} />
                         </div>
                         <h2 className='text-3xl sm:text-5xl leading-[1.2] my-3 font-medium bg-gradient-to-r from-slate-600 to-[#4ff800] bg-clip-text text-transparent max-w-xs sm:max-w-md animate-slideInUp' style={{ animationDelay: '0.1s' }}>
                             Gadgets you'll love. Prices you'll trust.
