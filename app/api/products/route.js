@@ -371,14 +371,17 @@ export async function POST(request) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
         }
 
+        const serializedImages = JSON.stringify(normalizedImages)
+        const serializedSizes = JSON.stringify(normalizedSizes)
+
         const createData = {
             name,
             description,
             mrp: parseFloat(mrp),
             price: parseFloat(price),
             deliveryCharge: parseFloat(deliveryCharge || 0),
-            images: JSON.stringify(normalizedImages),
-            sizes: JSON.stringify(normalizedSizes),
+            images: serializedImages,
+            sizes: serializedSizes,
             category,
             storeId: store.id
         }
