@@ -9,8 +9,8 @@ export const revalidate = 60
 
 export default async function Home() {
     const [latestProducts, bestSellingProducts] = await Promise.all([
-        getLatestProducts({ take: 4 }),
-        getBestSellingProducts({ take: 8 })
+        getLatestProducts({ take: 3 }),
+        getBestSellingProducts({ take: 4 })
     ])
 
     return (
