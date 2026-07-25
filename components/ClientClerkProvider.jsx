@@ -3,66 +3,63 @@ import React, { useEffect, useRef } from 'react'
 import { ClerkProvider, useUser } from '@clerk/nextjs'
 
 async function resolveUserLocation() {
-  if (typeof window === 'undefined') return null
-
-  const fallbackLocation = async () => {
-    try {
-      const response = await fetch('https://ipapi.co/json/')
-      if (!response.ok) return null
-
-      const data = await response.json()
-      return {
-        street: 'Live location',
-        city: data.city || '',
-        state: data.region || '',
-        zip: data.postal || '',
-        country: data.country_name || ''
-      }
-    } catch (error) {
-      console.error('Failed to resolve IP-based location:', error)
-      return null
-    }
-  }
-
-  if (!navigator.geolocation) {
-    return fallbackLocation()
-  }
+  if (typeof window === 'undefined' || !navigator.geolocation) return null
 
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        const { latitude, longitude } = position.coords
+
         try {
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}`, {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`, {
             headers: {
               'Accept-Language': 'en'
             }
           })
 
           if (!response.ok) {
-            resolve(await fallbackLocation())
+            resolve({
+              street: `Live location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              city: '',
+              state: '',
+              zip: '',
+              country: '',
+              latitude,
+              longitude
+            })
             return
           }
 
           const data = await response.json()
           resolve({
-            street: data.address?.road || data.address?.suburb || 'Live location',
+            street: data.address?.road || data.address?.suburb || `Live location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
             city: data.address?.city || data.address?.town || data.address?.village || '',
             state: data.address?.state || data.address?.region || '',
             zip: data.address?.postcode || '',
-            country: data.address?.country || ''
+            country: data.address?.country || '',
+            latitude,
+            longitude
           })
         } catch (error) {
-          console.error('Failed to reverse geocode location:', error)
-          resolve(await fallbackLocation())
+          console.error('Failed to reverse geocode device location:', error)
+          resolve({
+            street: `Live location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            city: '',
+            state: '',
+            zip: '',
+            country: '',
+            latitude,
+            longitude
+          })
         }
       },
-      async () => {
-        resolve(await fallbackLocation())
+      () => {
+        resolve(null)
       },
       {
         enableHighAccuracy: true,
-        timeout: 8000,
-        maximumAge: 60000
+        timeout: 10000,
+        maximumAge: 0
       }
     )
   })
@@ -94,7 +91,9 @@ function AutoSaveUserAddress() {
           zip: location?.zip || 'Auto-saved',
           country: location?.country || 'Live location',
           phone,
-          isLiveLocation: true
+          isLiveLocation: true,
+          latitude: location?.latitude ?? null,
+          longitude: location?.longitude ?? null
         }
 
         const response = await fetch('/api/user/address', {
