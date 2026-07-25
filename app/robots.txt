@@ -16,4 +16,4 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /store/
 
-Sitemap: https://vmcart.com/sitemap.xml
+Sitemap: https://vmcart.in/sitemap.xml

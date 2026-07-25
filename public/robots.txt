@@ -16,4 +16,4 @@ Allow: /orders
 Allow: /pricing
 
 # Sitemap
-Sitemap: https://vmcart.com/sitemap.xml
+Sitemap: https://vmcart.in/sitemap.xml

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in'
 
 function toUrl(path) {
   return `${baseUrl}${path}`

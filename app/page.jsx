@@ -12,7 +12,7 @@ export const metadata = {
     title: 'VM Cart | Shop Local & Discover Unique Products',
     description: 'Shop from independent sellers and local stores on VM Cart. Discover unique products, electronics, fashion, and home essentials online.',
     alternates: {
-        canonical: process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com',
+        canonical: process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in',
     },
 }
 
@@ -26,8 +26,8 @@ export default async function Home() {
         '@context': 'https://schema.org',
         '@type': 'Organization',
         name: 'VM Cart',
-        url: process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com',
-        logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'}/favicon.ico`,
+        url: process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in',
+        logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in'}/favicon.ico`,
         sameAs: ['https://www.instagram.com', 'https://www.facebook.com']
     }
 

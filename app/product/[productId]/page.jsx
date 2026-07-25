@@ -10,7 +10,7 @@ export const revalidate = 60
 export async function generateMetadata({ params }) {
     const { productId } = await params
     const product = await loadProduct(productId)
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in'
 
     if (!product) {
         return {
@@ -200,7 +200,7 @@ export default async function Product({ params }) {
             priceCurrency: 'INR',
             price: product.price,
             availability: product.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-            url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com'}/product/${product.id}`,
+            url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in'}/product/${product.id}`,
         },
     }
 

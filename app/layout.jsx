@@ -11,7 +11,7 @@ import "./globals.css";
 
 const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600"] });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.com';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vmcart.in';
 
 export const metadata = {
     metadataBase: new URL(siteUrl),
