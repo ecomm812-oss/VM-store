@@ -30,13 +30,13 @@ export const metadata = {
         url: siteUrl,
         siteName: 'VM Cart',
         type: 'website',
-        images: [`${siteUrl}/assets/pdp.png`],
+        images: [`${siteUrl}/assets/pd.png`],
     },
     twitter: {
         card: 'summary_large_image',
         title: 'VM Cart | Shop Local & Discover Unique Products',
         description: 'Discover and shop from independent sellers on VM Cart. Find unique products, local stores, and great deals with fast shipping and easy returns.',
-        images: [`${siteUrl}/assets/pdp.png`],
+        images: [`${siteUrl}/assets/pd.png`],
     },
     robots: {
         index: true,

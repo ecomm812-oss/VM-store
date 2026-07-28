@@ -1,6 +1,5 @@
 import gs_logo from "./gs_logo.png"
 import upload_area from "./upload_area.svg"
-import hero_model_img from "./pdp.png"
 import hero_product_img1 from "./hero_product_img1.png"
 import hero_product_img2 from "./hero_product_img2.png"
 import product_img9 from "./product_img9.png"
@@ -9,7 +8,8 @@ import product_img13 from "./product_img13.png"
 import { ClockFadingIcon, HeadsetIcon, SendIcon } from "lucide-react";
 
 export const assets = {
-    upload_area, hero_model_img,
+    upload_area,
+    hero_model_img: "/assets/pd.png",
     hero_product_img1, hero_product_img2, gs_logo,
     product_img9, product_img10, product_img13,
 }
