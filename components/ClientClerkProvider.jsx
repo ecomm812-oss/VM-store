@@ -118,10 +118,19 @@ function AutoSaveUserAddress() {
 }
 
 export default function ClientClerkProvider({ children, publishableKey }) {
-  return (
-    <ClerkProvider publishableKey={publishableKey}>
-      <AutoSaveUserAddress />
-      {children}
-    </ClerkProvider>
-  )
+  if (!publishableKey) {
+    return <>{children}</>
+  }
+
+  try {
+    return (
+      <ClerkProvider publishableKey={publishableKey}>
+        <AutoSaveUserAddress />
+        {children}
+      </ClerkProvider>
+    )
+  } catch (error) {
+    console.error('ClientClerkProvider failed:', error)
+    return <>{children}</>
+  }
 }

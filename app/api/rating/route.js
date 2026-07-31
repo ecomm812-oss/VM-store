@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { OrderStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
 
@@ -29,9 +30,7 @@ export async function GET(request) {
                 productId,
                 order: {
                     userId: user.id,
-                    status: {
-                        in: ['DELIVERED', 'delivered']
-                    }
+                    status: OrderStatus.DELIVERED
                 }
             }
         })
@@ -106,9 +105,7 @@ export async function POST(request) {
             where: {
                 id: orderId,
                 userId: user.id,
-                status: {
-                    in: ['DELIVERED', 'delivered']
-                }
+                status: OrderStatus.DELIVERED
             }
         })
 

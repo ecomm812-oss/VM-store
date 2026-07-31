@@ -161,10 +161,10 @@ export async function GET(request) {
             }, { status: 404 })
         }
 
-        let products
+        let products = []
         try {
             console.log('[API] Starting product fetch with params:', { search, category })
-            products = await prisma.product.findMany({
+            const fetchedProducts = await prisma.product.findMany({
                 where: {
                     ...where,
                     inStock: true
@@ -182,24 +182,24 @@ export async function GET(request) {
                     }
                 }
             })
-            
-            // Transform to flat structure with storeId
-            products = products.map(p => ({
+
+            products = Array.isArray(fetchedProducts) ? fetchedProducts.map(p => ({
                 ...p,
-                storeId: p.store?.id || p.storeId || null,
+                storeId: p?.store?.id || p?.storeId || null,
                 store: undefined
-            }))
-            
+            })) : []
+
             console.log('[API] Successfully fetched', products.length, 'products from database')
         } catch (queryError) {
             console.error('[API] Query error in findMany:', queryError?.message)
             if (!isProductColumnTypeMismatch(queryError)) {
-                throw queryError
-            }
-
-            // Fallback to raw query if Prisma has type issues
-            console.log('[API] Using raw SQL fallback due to type mismatch')
-            const rawProducts = await prisma.$queryRaw`
+                console.warn('[API] Falling back to empty product list due to query error')
+                products = []
+            } else {
+                // Fallback to raw query if Prisma has type issues
+                console.log('[API] Using raw SQL fallback due to type mismatch')
+                try {
+                    const rawProducts = await prisma.$queryRaw`
                 SELECT
                     p."id",
                     p."name",
@@ -228,28 +228,34 @@ export async function GET(request) {
                     p."createdAt"
                 ORDER BY p."createdAt" DESC
             `
-            console.log('[API] Raw query returned', rawProducts.length, 'products')
+                    console.log('[API] Raw query returned', rawProducts.length, 'products')
 
-            products = rawProducts
-                .map((product) => ({
-                    id: product.id,
-                    name: product.name,
-                    description: product.description,
-                    mrp: product.mrp,
-                    price: product.price,
-                    deliveryCharge: product.deliveryCharge,
-                    images: product.images,
-                    sizes: product.sizes,
-                    category: product.category,
-                    storeId: product.storeId,
-                    createdAt: product.createdAt,
-                    _count: {
-                        rating: product.ratingCount || 0
-                    }
-                }))
-                .filter(product => !search || product.name.toLowerCase().includes(search.toLowerCase()))
-                .filter(product => !category || product.category === category)
-            console.log('[API] Mapped to', products.length, 'products after filtering')
+                    products = rawProducts
+                        .map((product) => ({
+                            id: product?.id,
+                            name: product?.name,
+                            description: product?.description,
+                            mrp: product?.mrp,
+                            price: product?.price,
+                            deliveryCharge: product?.deliveryCharge,
+                            images: product?.images,
+                            sizes: product?.sizes,
+                            category: product?.category,
+                            storeId: product?.storeId,
+                            createdAt: product?.createdAt,
+                            _count: {
+                                rating: product?.ratingCount || 0
+                            }
+                        }))
+                        .filter(product => product && product.id && product.name)
+                        .filter(product => !search || String(product.name).toLowerCase().includes(search.toLowerCase()))
+                        .filter(product => !category || String(product.category) === category)
+                    console.log('[API] Mapped to', products.length, 'products after filtering')
+                } catch (rawError) {
+                    console.warn('[API] Raw SQL fallback failed:', rawError?.message)
+                    products = []
+                }
+            }
         }
 
         // Parse JSON fields safely and normalize legacy image shapes.
@@ -257,6 +263,8 @@ export async function GET(request) {
         const validProducts = products
             .map(product => {
                 try {
+                    if (!product || typeof product !== 'object') return null
+
                     const imagesValue = product.images
                     const sizesValue = product.sizes
 
@@ -287,19 +295,23 @@ export async function GET(request) {
 
                     return {
                         ...product,
+                        id: product.id || null,
+                        name: product.name || 'Unnamed Product',
                         images: normalizedImages,
                         sizes: normalizedSizes,
                         deliveryCharge: Number(product.deliveryCharge || 0),
+                        price: Number(product.price ?? 0),
+                        mrp: Number(product.mrp ?? product.price ?? 0),
                         rating: [],
                         ratingCount: product?._count?.rating || 0,
                         averageRating: 0
                     }
                 } catch (error) {
-                    console.warn(`[API] Failed to normalize product ${product.id}:`, error?.message)
+                    console.warn(`[API] Failed to normalize product ${product?.id || 'unknown'}:`, error?.message)
                     return null
                 }
             })
-            .filter(product => product && product.id && product.name && product.price !== undefined)
+            .filter(product => product && product.id && product.name)
 
         console.log('[API] Normalized to', validProducts.length, 'valid products')
         if (validProducts.length < products.length) {

@@ -17,10 +17,19 @@ export const metadata = {
 }
 
 export default async function Home() {
-    const [latestProducts, bestSellingProducts] = await Promise.all([
-        getLatestProducts({ take: 3 }),
-        getBestSellingProducts({ take: 4 })
-    ])
+    let latestProducts = []
+    let bestSellingProducts = []
+
+    try {
+        ;[latestProducts, bestSellingProducts] = await Promise.all([
+            getLatestProducts({ take: 3 }),
+            getBestSellingProducts({ take: 4 })
+        ])
+    } catch (error) {
+        console.error('Home page product loading failed:', error)
+        latestProducts = []
+        bestSellingProducts = []
+    }
 
     const organizationSchema = {
         '@context': 'https://schema.org',
@@ -31,14 +40,29 @@ export default async function Home() {
         sameAs: ['https://www.instagram.com', 'https://www.facebook.com']
     }
 
-    return (
-        <div>
-            <StructuredData data={organizationSchema} />
-            <Hero />
-            <LatestProducts products={latestProducts} />
-            <BestSelling products={bestSellingProducts} />
-            <OurSpecs />
-            <Newsletter />
-        </div>
-    )
+    try {
+        return (
+            <div>
+                <StructuredData data={organizationSchema} />
+                <Hero />
+                <LatestProducts products={latestProducts} />
+                <BestSelling products={bestSellingProducts} />
+                <OurSpecs />
+                <Newsletter />
+            </div>
+        )
+    } catch (error) {
+        console.error('Home page render failed:', error)
+        return (
+            <div className="min-h-screen bg-white">
+                <Hero />
+                <div className="mx-6 my-20 max-w-6xl rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
+                    <h2 className="text-xl font-semibold text-slate-800">Welcome to VM Cart</h2>
+                    <p className="mt-2 text-sm text-slate-600">The storefront is loading with a safe fallback so you can still browse the experience.</p>
+                </div>
+                <OurSpecs />
+                <Newsletter />
+            </div>
+        )
+    }
 }

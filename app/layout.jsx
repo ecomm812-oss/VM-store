@@ -48,36 +48,55 @@ const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
 const isClerkConfigured = clerkPublishableKey.startsWith('pk_');
 
 export default function RootLayout({ children }) {
-    return (
-        <html lang="en">
-            <head suppressHydrationWarning={true} />
-            <body className={`${outfit.className} antialiased`} suppressHydrationWarning={true}>
-                <Script
-                    id="razorpay-checkout"
-                    src="https://checkout.razorpay.com/v1/checkout.js"
-                    strategy="afterInteractive"
-                />
-                <StoreProvider>
-                    <AppInitializer />
-                    <Toaster />
-                    {isClerkConfigured ? (
-                        <ClientClerkProvider publishableKey={clerkPublishableKey}>
+    try {
+        return (
+            <html lang="en">
+                <head suppressHydrationWarning={true} />
+                <body className={`${outfit.className} antialiased`} suppressHydrationWarning={true}>
+                    <Script
+                        id="razorpay-checkout"
+                        src="https://checkout.razorpay.com/v1/checkout.js"
+                        strategy="afterInteractive"
+                    />
+                    <StoreProvider>
+                        <AppInitializer />
+                        <Toaster />
+                        {isClerkConfigured ? (
+                            <ClientClerkProvider publishableKey={clerkPublishableKey}>
+                                <div className="min-h-screen bg-white">
+                                    <Navbar />
+                                    {children}
+                                    <Footer />
+                                </div>
+                            </ClientClerkProvider>
+                        ) : (
                             <div className="min-h-screen bg-white">
                                 <Navbar />
                                 {children}
                                 <Footer />
                             </div>
-                        </ClientClerkProvider>
-                    ) : (
-                        <div className="min-h-screen bg-white">
-                            <Navbar />
-                            {children}
-                            <Footer />
-                        </div>
-                    )}
-                </StoreProvider>
-                <Analytics />
-            </body>
-        </html>
-    );
+                        )}
+                    </StoreProvider>
+                    <Analytics />
+                </body>
+            </html>
+        );
+    } catch (error) {
+        console.error('Root layout render failed:', error)
+        return (
+            <html lang="en">
+                <body className={`${outfit.className} antialiased`} suppressHydrationWarning={true}>
+                    <div className="min-h-screen bg-white">
+                        <Navbar />
+                        <main className="mx-6 py-10">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center text-slate-700">
+                                VM Cart is loading with a safe fallback. Please refresh if the storefront takes a moment.
+                            </div>
+                        </main>
+                        <Footer />
+                    </div>
+                </body>
+            </html>
+        )
+    }
 }

@@ -35,9 +35,10 @@ const normalizeProductImages = (images) => {
 }
 
 const ProductDetails = ({ product }) => {
+    const safeProduct = product || {}
 
-    if (!product || !product.id || !product.name) {
-        console.error('[ProductDetails] Product is missing required fields:', product)
+    if (!safeProduct || !safeProduct.id || !safeProduct.name) {
+        console.error('[ProductDetails] Product is missing required fields:', safeProduct)
         return (
             <div className="text-center py-8">
                 <p className="text-red-500">Invalid product data</p>
@@ -45,7 +46,7 @@ const ProductDetails = ({ product }) => {
         )
     }
 
-    const productId = product.id;
+    const productId = safeProduct.id;
     const currency = process.env.NEXT_PUBLIC_CURRENCY_SYMBOL || '₹';
 
     const cart = useSelector(state => state.cart.cartItems);
@@ -54,33 +55,33 @@ const ProductDetails = ({ product }) => {
     const router = useRouter()
 
     // Safe access to images - ensure it's an array
-    const images = normalizeProductImages(product.images)
+    const images = normalizeProductImages(safeProduct.images)
     const [mainImage, setMainImage] = useState(images?.[0] || '/placeholder.png');
 
-    const [selectedSize, setSelectedSize] = useState(product?.category === 'Clothing' ? 'M' : 'One Size');
+    const [selectedSize, setSelectedSize] = useState(safeProduct?.category === 'Clothing' ? 'M' : 'One Size');
 
-    const availableSizes = product?.category === 'Clothing' ? ['XS', 'S', 'M', 'L', 'XL', 'XXL'] : [];
+    const availableSizes = safeProduct?.category === 'Clothing' ? ['XS', 'S', 'M', 'L', 'XL', 'XXL'] : [];
 
     const addToCartHandler = () => {
         dispatch(addToCart({ productId, selectedSize }))
     }
 
     // Safe rating calculation - ensure rating is an array
-    const rating = Array.isArray(product.rating) ? product.rating : []
+    const rating = Array.isArray(safeProduct.rating) ? safeProduct.rating : []
     const averageRating = (rating.length > 0)
         ? rating.reduce((acc, item) => acc + (item.rating || 0), 0) / rating.length
         : 0;
 
-    const deliveryDays = Number(product?.deliveryDays) || 5;
+    const deliveryDays = Number(safeProduct?.deliveryDays) || 5;
     const defaultDeliveryDate = new Date();
     defaultDeliveryDate.setDate(defaultDeliveryDate.getDate() + deliveryDays);
-    const estimatedDeliveryDate = product?.estimatedDelivery
-        ? new Date(product.estimatedDelivery)
+    const estimatedDeliveryDate = safeProduct?.estimatedDelivery
+        ? new Date(safeProduct.estimatedDelivery)
         : defaultDeliveryDate;
-    const deliveryCharge = typeof product?.deliveryCharge === 'number'
-        ? product.deliveryCharge
-        : (Number(product?.price) >= 499 ? 0 : 49);
-    const returnPolicy = product?.returnPolicy || 'Easy 7-day returns if the product is unused and packed in its original condition.';
+    const deliveryCharge = typeof safeProduct?.deliveryCharge === 'number'
+        ? safeProduct.deliveryCharge
+        : (Number(safeProduct?.price) >= 499 ? 0 : 49);
+    const returnPolicy = safeProduct?.returnPolicy || 'Easy 7-day returns if the product is unused and packed in its original condition.';
     const deliveryLabel = deliveryCharge === 0 ? 'Free delivery' : `${currency}${deliveryCharge} delivery charge`;
     const formattedDeliveryDate = Number.isNaN(estimatedDeliveryDate.getTime())
         ? `in ${deliveryDays} business days`
@@ -101,7 +102,7 @@ const ProductDetails = ({ product }) => {
                 </div>
             </div>
             <div className="flex-1">
-                <h1 className="text-3xl font-semibold text-slate-800">{product.name}</h1>
+                <h1 className="text-3xl font-semibold text-slate-800">{safeProduct.name}</h1>
                 <div className='flex items-center mt-2'>
                     {Array(5).fill('').map((_, index) => (
                         <StarIcon key={index} size={14} className='text-transparent mt-0.5' fill={averageRating >= index + 1 ? "#00C950" : "#D1D5DB"} />
@@ -109,12 +110,12 @@ const ProductDetails = ({ product }) => {
                     <p className="text-sm ml-3 text-slate-500">{rating.length || 0} Reviews</p>
                 </div>
                 <div className="flex items-start my-6 gap-3 text-2xl font-semibold text-slate-800">
-                    <p> {currency}{product.price} </p>
-                    <p className="text-xl text-slate-500 line-through">{currency}{product.mrp}</p>
+                    <p> {currency}{safeProduct.price} </p>
+                    <p className="text-xl text-slate-500 line-through">{currency}{safeProduct.mrp}</p>
                 </div>
                 <div className="flex items-center gap-2 text-slate-500">
                     <TagIcon size={14} />
-                    <p>Save {((product.mrp - product.price) / product.mrp * 100).toFixed(0)}% right now</p>
+                    <p>Save {(((Number(safeProduct.mrp) || 0) - (Number(safeProduct.price) || 0)) / Math.max(Number(safeProduct.mrp) || 1, 1) * 100).toFixed(0)}% right now</p>
                 </div>
 
                 <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">

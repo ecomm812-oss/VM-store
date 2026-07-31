@@ -6,24 +6,25 @@ import { useEffect, useState } from "react"
 import RatingModal from './RatingModal'
 
 const ProductDescription = ({ product }) => {
+    const safeProduct = product || {}
 
     const [selectedTab, setSelectedTab] = useState('Description')
     const [ratingModal, setRatingModal] = useState(null)
     const [reviewEligibility, setReviewEligibility] = useState(null)
-    const reviews = Array.isArray(product?.rating) ? product.rating : []
-    const reviewCount = typeof product?._count?.rating === 'number' ? product._count.rating : reviews.length
-    const averageRating = typeof product?.ratingAvg === 'number'
-        ? product.ratingAvg
+    const reviews = Array.isArray(safeProduct?.rating) ? safeProduct.rating : []
+    const reviewCount = typeof safeProduct?._count?.rating === 'number' ? safeProduct._count.rating : reviews.length
+    const averageRating = typeof safeProduct?.ratingAvg === 'number'
+        ? safeProduct.ratingAvg
         : reviews.length > 0
             ? reviews.reduce((acc, item) => acc + (item.rating || 0), 0) / reviews.length
             : 0;
 
     useEffect(() => {
-        if (!product?.id || selectedTab !== 'Reviews') return
+        if (!safeProduct?.id || selectedTab !== 'Reviews') return
 
         const fetchEligibility = async () => {
             try {
-                const response = await fetch(`/api/rating?productId=${product.id}`)
+                const response = await fetch(`/api/rating?productId=${safeProduct.id}`)
                 if (response.ok) {
                     const data = await response.json()
                     setReviewEligibility(data?.eligible ? data : { eligible: false, message: 'Reviews can be submitted after a delivered order.' })
@@ -36,7 +37,7 @@ const ProductDescription = ({ product }) => {
         }
 
         fetchEligibility()
-    }, [product?.id, selectedTab])
+    }, [safeProduct?.id, selectedTab])
 
     return (
         <div className="my-18 text-sm text-slate-600">
@@ -53,7 +54,7 @@ const ProductDescription = ({ product }) => {
             {/* Description */}
             {selectedTab === "Description" && (
                 <div className="max-w-2xl space-y-4">
-                    <p>{product.description}</p>
+                    <p>{safeProduct.description || 'No description available.'}</p>
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                         <p className="font-semibold text-slate-800">Shipping & returns</p>
                         <ul className="mt-2 space-y-1">
@@ -106,7 +107,7 @@ const ProductDescription = ({ product }) => {
                     <div className="mt-6">
                         {reviewEligibility?.eligible ? (
                             <button
-                                onClick={() => setRatingModal({ productId: product.id, orderId: reviewEligibility.orderId })}
+                                onClick={() => setRatingModal({ productId: safeProduct.id, orderId: reviewEligibility.orderId })}
                                 className="rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white hover:bg-green-600 transition"
                             >
                                 Rate this product
@@ -122,11 +123,11 @@ const ProductDescription = ({ product }) => {
             {ratingModal && <RatingModal ratingModal={ratingModal} setRatingModal={setRatingModal} />}
 
             {/* Store Page */}
-            {product?.store && (
+            {safeProduct?.store && (
                 <div className="flex gap-3 mt-14">
-                    <Image src={product.store.logo || '/placeholder.png'} alt="" className="size-11 rounded-full ring ring-slate-400" width={100} height={100} />
+                    <Image src={safeProduct.store.logo || '/placeholder.png'} alt="" className="size-11 rounded-full ring ring-slate-400" width={100} height={100} />
                     <div>
-                        <Link href={`/shop/${product.store.username}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
+                        <Link href={`/shop/${safeProduct.store.username || ''}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
                     </div>
                 </div>
             )}

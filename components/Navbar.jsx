@@ -81,7 +81,7 @@ const Navbar = () => {
     }
 
     return (
-        <nav className="relative bg-white animate-slideInDown">
+        <nav className="relative z-20 bg-white animate-slideInDown">
             <div className="mx-6">
                 <div className="flex items-center justify-between max-w-7xl mx-auto py-4 transition-all">
 
