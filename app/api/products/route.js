@@ -164,24 +164,27 @@ export async function GET(request) {
         let products = []
         try {
             console.log('[API] Starting product fetch with params:', { search, category })
-            const fetchedProducts = await prisma.product.findMany({
-                where: {
-                    ...where,
-                    inStock: true
-                },
-                include: {
-                    store: {
-                        select: {
-                            id: true
-                        }
+            const fetchedProducts = await Promise.race([
+                prisma.product.findMany({
+                    where: {
+                        ...where,
+                        inStock: true
                     },
-                    _count: {
-                        select: {
-                            rating: true
+                    include: {
+                        store: {
+                            select: {
+                                id: true
+                            }
+                        },
+                        _count: {
+                            select: {
+                                rating: true
+                            }
                         }
                     }
-                }
-            })
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 3500))
+            ])
 
             products = Array.isArray(fetchedProducts) ? fetchedProducts.map(p => ({
                 ...p,
@@ -193,8 +196,14 @@ export async function GET(request) {
         } catch (queryError) {
             console.error('[API] Query error in findMany:', queryError?.message)
             if (!isProductColumnTypeMismatch(queryError)) {
-                console.warn('[API] Falling back to empty product list due to query error')
-                products = []
+                console.warn('[API] Falling back to local fallback product list due to query error')
+                try {
+                    const fallbackProducts = await getPublicDevProducts({ search: search || '', category: category || '' })
+                    products = fallbackProducts
+                } catch (fallbackError) {
+                    console.warn('[API] Local fallback failed:', fallbackError?.message)
+                    products = []
+                }
             } else {
                 // Fallback to raw query if Prisma has type issues
                 console.log('[API] Using raw SQL fallback due to type mismatch')

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { OrderStatus } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/security'
@@ -143,6 +144,9 @@ export async function POST(request) {
                 }
             }
         })
+
+        revalidatePath('/')
+        revalidatePath('/shop')
 
         return NextResponse.json(newRating)
     } catch (error) {

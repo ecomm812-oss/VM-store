@@ -13,7 +13,7 @@ export default async function Shop({ searchParams }) {
     const pageSize = 24
     const skip = (page - 1) * pageSize
 
-    const [products, totalCount, stores] = await Promise.all([
+    const [productsResult, totalCountResult, storesResult] = await Promise.allSettled([
         getPublicShopProducts({
             search: search || undefined,
             category: category || undefined,
@@ -30,8 +30,11 @@ export default async function Shop({ searchParams }) {
         })
     ])
 
-    const totalPages = Math.max(1, Math.ceil((totalCount || 0) / pageSize))
+    const resolvedProducts = productsResult.status === 'fulfilled' ? productsResult.value : []
+    const resolvedCount = totalCountResult.status === 'fulfilled' ? totalCountResult.value : 0
+    const resolvedStores = storesResult.status === 'fulfilled' ? storesResult.value : []
 
+    const totalPages = Math.max(1, Math.ceil((resolvedCount || 0) / pageSize))
     const displayTitle = category || (search ? `Search: ${search}` : 'All')
     const hasSearch = Boolean(search)
 
@@ -47,14 +50,14 @@ export default async function Shop({ searchParams }) {
                     {displayTitle} <span className="text-slate-700 font-medium">Products</span>
                 </h1>
 
-                {hasSearch && stores.length > 0 ? (
+                {hasSearch && resolvedStores.length > 0 ? (
                     <section className="mb-10">
                         <div className="mb-4 flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-slate-700">Matching Stores</h2>
-                            <span className="text-sm text-slate-500">{stores.length} found</span>
+                            <span className="text-sm text-slate-500">{resolvedStores.length} found</span>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            {stores.map((store) => (
+                            {resolvedStores.map((store) => (
                                 <Link key={store.id} href={`/shop/${store.username}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md">
                                     <div className="flex items-center gap-3">
                                         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-slate-100">
@@ -79,21 +82,22 @@ export default async function Shop({ searchParams }) {
                 ) : null}
 
                 <div className="grid grid-cols-2 sm:flex flex-wrap gap-6 xl:gap-12 mx-auto mb-6">
-                    {products.length > 0 ? (
-                        products.map((product) => <ProductCard key={product.id} product={product} />)
+                    {resolvedProducts.length > 0 ? (
+                        resolvedProducts.map((product) => <ProductCard key={product.id} product={product} />)
                     ) : (
                         <p className="text-slate-500 col-span-full">
                             {category ? 'No products found in this category.' : search ? 'No products found for this search.' : 'No products available right now.'}
                         </p>
                     )}
                 </div>
+
                 <div className="flex justify-between items-center max-w-7xl mx-auto mb-32 mt-4">
                     <div>
                         {page > 1 ? (
                             <Link href={`/shop?page=${page - 1}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`} className="text-slate-500 hover:text-slate-700">← Prev</Link>
                         ) : null}
                     </div>
-                    <div className="text-sm text-slate-600">Page {page} of {totalPages} ({totalCount || 0} products)</div>
+                    <div className="text-sm text-slate-600">Page {page} of {totalPages} ({resolvedCount || 0} products)</div>
                     <div>
                         {page < totalPages ? (
                             <Link href={`/shop?page=${page + 1}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}`} className="text-slate-500 hover:text-slate-700">Next →</Link>

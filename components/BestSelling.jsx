@@ -2,17 +2,12 @@ import Title from './Title'
 import ProductCard from './ProductCard'
 
 const BestSelling = ({ products = [] }) => {
-    const displayQuantity = 8
-    const bestSellingProducts = products
-        .slice()
-        .sort((a, b) => {
-            const aRatingCount = typeof a?.ratingCount === 'number' ? a.ratingCount : (a?.rating?.length || 0)
-            const bRatingCount = typeof b?.ratingCount === 'number' ? b.ratingCount : (b?.rating?.length || 0)
-            return bRatingCount - aRatingCount
-        })
-        .slice(0, displayQuantity)
+    const displayQuantity = 4
+    const bestSellingProducts = Array.isArray(products)
+        ? products.slice(0, displayQuantity)
+        : []
 
-    const visibleCount = Math.min(bestSellingProducts.length, products.length)
+    const visibleCount = Math.min(bestSellingProducts.length, Array.isArray(products) ? products.length : 0)
 
     return (
         <div className='px-6 my-30 max-w-6xl mx-auto animate-fadeInUp'>

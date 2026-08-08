@@ -21,10 +21,13 @@ export default async function Home() {
     let bestSellingProducts = []
 
     try {
-        ;[latestProducts, bestSellingProducts] = await Promise.all([
-            getLatestProducts({ take: 3 }),
+        const [latest, bestSelling] = await Promise.all([
+            getLatestProducts({ take: 4 }),
             getBestSellingProducts({ take: 4 })
         ])
+
+        latestProducts = latest.slice(0, 4)
+        bestSellingProducts = bestSelling.slice(0, 4)
     } catch (error) {
         console.error('Home page product loading failed:', error)
         latestProducts = []

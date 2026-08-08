@@ -3,10 +3,12 @@
 import { Star } from 'lucide-react';
 import React, { useState } from 'react'
 import { XIcon } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
 const RatingModal = ({ ratingModal, setRatingModal }) => {
 
+    const router = useRouter();
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
 
@@ -39,8 +41,9 @@ const RatingModal = ({ ratingModal, setRatingModal }) => {
             if (response.ok) {
                 toast.success('Rating submitted successfully!');
                 setRatingModal(null);
-                // Optionally refresh the page to show the new rating
-                window.location.reload();
+                setRating(0);
+                setReview('');
+                router.refresh();
             } else {
                 try {
                     const error = await response.json();

@@ -1,8 +1,8 @@
 'use client'
+import { memo, useMemo } from 'react'
 import { StarIcon } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
 import { normalizeStringArrayInput, sanitizeImageSrc } from '@/lib/product-utils'
 
 const ProductCard = ({ product }) => {
@@ -41,23 +41,22 @@ const ProductCard = ({ product }) => {
         return null
     }
 
-    const imageSrc = getImageSrc(product?.images) || '/placeholder.png'
+    const imageSrc = useMemo(() => getImageSrc(product?.images) || '/placeholder.png', [product?.images])
 
     // Validate product data
     if (!product || !product.id || !product.name) {
         return null
     }
 
-    const ratingCount = typeof product.ratingCount === 'number'
+    const ratingCount = useMemo(() => typeof product.ratingCount === 'number'
         ? product.ratingCount
-        : (Array.isArray(product.rating) ? product.rating.length : 0)
+        : (Array.isArray(product.rating) ? product.rating.length : 0), [product.ratingCount, product.rating])
 
-    // calculate average rating from precomputed value when available.
-    const rating = typeof product.averageRating === 'number'
+    const rating = useMemo(() => typeof product.averageRating === 'number'
         ? Math.round(product.averageRating)
         : (Array.isArray(product.rating) && product.rating.length > 0
             ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
-            : 0)
+            : 0), [product.averageRating, product.rating])
 
     return (
         <Link href={`/product/${product.id}`} className='group max-xl:mx-auto animate-fadeInUp stagger-item'>
@@ -80,4 +79,4 @@ const ProductCard = ({ product }) => {
     )
 }
 
-export default ProductCard
+export default memo(ProductCard)
