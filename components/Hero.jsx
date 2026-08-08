@@ -1,5 +1,7 @@
 'use client'
 import { assets } from '@/assets/assets'
+import heroProductImg1 from '@/assets/hero_product_img1.png'
+import heroProductImg2 from '@/assets/hero_product_img2.png'
 import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
 import React from 'react'
 import Link from 'next/link'
@@ -38,7 +40,7 @@ const Hero = () => {
                                 <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2 cursor-pointer'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
                             </Link>
                         </div>
-                        <img className='w-35 transition-transform duration-300 group-hover:scale-110' src={assets.hero_product_img1} alt="" />
+                        <img className='w-35 transition-transform duration-300 group-hover:scale-110' src={heroProductImg1.src || heroProductImg1} alt="" />
                     </div>
                     <div className='flex-1 flex items-center justify-between w-full bg-blue-200 rounded-3xl p-6 px-8 group hover-lift card-animate animate-fadeInRight' style={{ animationDelay: '0.2s' }}>
                         <div>
@@ -47,7 +49,7 @@ const Hero = () => {
                                 <p className='flex items-center gap-1 mt-4 transition-all duration-300 group-hover:gap-2 cursor-pointer'>View more <ArrowRightIcon className='group-hover:ml-2 transition-all' size={18} /> </p>
                             </Link>
                         </div>
-                        <img className='w-35 transition-transform duration-300 group-hover:scale-110' src={assets.hero_product_img2} alt="" />
+                        <img className='w-35 transition-transform duration-300 group-hover:scale-110' src={heroProductImg2.src || heroProductImg2} alt="" />
                     </div>
                 </div>
             </div>
