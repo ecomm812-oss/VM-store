@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import StoreProvider from "@/app/StoreProvider";
 import ClientClerkProvider from "@/components/ClientClerkProvider";
 import AppInitializer from "@/components/AppInitializer";
+import RouteLoader from "@/components/RouteLoader";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
@@ -61,6 +62,7 @@ export default function RootLayout({ children }) {
                     <StoreProvider>
                         <AppInitializer />
                         <Toaster />
+                        <RouteLoader />
                         {isClerkConfigured ? (
                             <ClientClerkProvider publishableKey={clerkPublishableKey}>
                                 <div className="min-h-screen bg-white">
