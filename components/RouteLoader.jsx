@@ -1,11 +1,23 @@
 'use client'
 
-import { useNavigation } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
 export default function RouteLoader() {
-    const navigation = useNavigation()
+    const pathname = usePathname()
+    const prev = useRef(pathname)
+    const [loading, setLoading] = useState(false)
 
-    if (navigation.state !== 'loading') return null
+    useEffect(() => {
+        if (prev.current && prev.current !== pathname) {
+            setLoading(true)
+            const t = setTimeout(() => setLoading(false), 600)
+            return () => clearTimeout(t)
+        }
+        prev.current = pathname
+    }, [pathname])
+
+    if (!loading) return null
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm">
