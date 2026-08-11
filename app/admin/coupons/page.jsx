@@ -16,7 +16,7 @@ export default function AdminCoupons() {
         forNewUser: false,
         forMember: false,
         isPublic: false,
-        expiresAt: new Date()
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
     })
 
     const fetchCoupons = async () => {
@@ -57,16 +57,30 @@ export default function AdminCoupons() {
                 })
                 toast.success('Coupon added successfully')
             } else {
-                throw new Error('Failed to add coupon')
+                const errorData = await response.json().catch(() => null)
+                const message = errorData?.error || 'Failed to add coupon'
+                throw new Error(message)
             }
         } catch (error) {
             console.error('Error adding coupon:', error)
-            toast.error('Failed to add coupon')
+            toast.error(error.message || 'Failed to add coupon')
         }
     }
 
     const handleChange = (e) => {
-        setNewCoupon({ ...newCoupon, [e.target.name]: e.target.value })
+        const { name, value, type } = e.target
+
+        if (name === 'expiresAt') {
+            setNewCoupon({ ...newCoupon, expiresAt: value ? new Date(value) : new Date(Date.now() + 24 * 60 * 60 * 1000) })
+            return
+        }
+
+        if (type === 'number') {
+            setNewCoupon({ ...newCoupon, [name]: value === '' ? '' : Number(value) })
+            return
+        }
+
+        setNewCoupon({ ...newCoupon, [name]: value })
     }
 
     const deleteCoupon = async (code) => {
