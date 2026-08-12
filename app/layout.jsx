@@ -5,6 +5,7 @@ import ClientClerkProvider from "@/components/ClientClerkProvider";
 import AppInitializer from "@/components/AppInitializer";
 import RouteLoader from "@/components/RouteLoader";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -80,6 +81,7 @@ export default function RootLayout({ children }) {
                         )}
                     </StoreProvider>
                     <Analytics />
+                    <SpeedInsights />
                 </body>
             </html>
         );
