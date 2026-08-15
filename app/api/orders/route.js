@@ -152,13 +152,36 @@ export async function POST(request) {
             calculatedTotal += product.price * item.quantity
         }
 
-        const expectedTotal = calculatedTotal + Number(deliveryCharge || 0)
+        let discountAmount = 0
+        let validatedCoupon = null
 
-        // Validate that submitted total matches calculated total plus any delivery charge (allow 1 cent tolerance for currency issues)
+        if (isCouponUsed) {
+            const couponCode = coupon?.code?.toString().trim().toUpperCase()
+
+            if (!couponCode) {
+                return NextResponse.json({ error: 'Coupon code is required when applying a discount.', code: 400 }, { status: 400 })
+            }
+
+            validatedCoupon = await prisma.coupon.findUnique({ where: { code: couponCode } })
+
+            if (!validatedCoupon) {
+                return NextResponse.json({ error: 'Invalid coupon code.', code: 400 }, { status: 400 })
+            }
+
+            if (validatedCoupon.expiresAt <= new Date()) {
+                return NextResponse.json({ error: 'Coupon has expired.', code: 400 }, { status: 400 })
+            }
+
+            discountAmount = Number((calculatedTotal * (validatedCoupon.discount / 100)).toFixed(2))
+        }
+
+        const expectedTotal = calculatedTotal + Number(deliveryCharge || 0) - discountAmount
+
+        // Validate that submitted total matches calculated total plus any delivery charge and coupon discount (allow 1 cent tolerance for currency issues)
         const tolerance = 0.01
         if (Math.abs(expectedTotal - total) > tolerance) {
             return NextResponse.json({
-                error: 'Order total does not match item prices and delivery charges. Please refresh and try again.',
+                error: 'Order total does not match item prices, delivery charges, and coupon discount. Please refresh and try again.',
                 code: 400
             }, { status: 400 })
         }
@@ -183,8 +206,8 @@ export async function POST(request) {
                 storeId,
                 addressId,
                 paymentMethod,
-                isCouponUsed,
-                coupon: JSON.stringify(coupon),
+                isCouponUsed: !!validatedCoupon,
+                coupon: JSON.stringify(validatedCoupon || {}),
                 orderItems: {
                     create: orderItems.map(item => ({
                         productId: item.productId,

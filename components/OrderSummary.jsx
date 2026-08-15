@@ -44,7 +44,7 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [showAddressModal, setShowAddressModal] = useState(false);
     const [couponCodeInput, setCouponCodeInput] = useState('');
-    const [coupon, setCoupon] = useState('');
+    const [coupon, setCoupon] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const discountAmount = coupon ? (subtotal * (coupon.discount / 100)) : 0;
@@ -78,6 +78,28 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
 
     const handleCouponCode = async (event) => {
         event.preventDefault();
+        const code = couponCodeInput.trim();
+
+        if (!code) {
+            toast.error('Please enter a coupon code.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/coupons?code=${encodeURIComponent(code)}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.error || 'Invalid coupon code.');
+            }
+
+            setCoupon(data);
+            setCouponCodeInput('');
+            toast.success(`Coupon ${data.code.toUpperCase()} applied!`);
+        } catch (error) {
+            console.error('Coupon validation failed:', error);
+            toast.error(error.message || 'Coupon code not valid.');
+        }
     }
 
     const verifyRazorpayPayment = async (paymentResponse, orderId) => {
@@ -292,7 +314,7 @@ const OrderSummaryContent = ({ totalPrice, items, user }) => {
                         <div className='w-full flex items-center justify-center gap-2 text-xs mt-2'>
                             <p>Code: <span className='font-semibold ml-1'>{coupon.code.toUpperCase()}</span></p>
                             <p>{coupon.description}</p>
-                            <XIcon size={18} onClick={() => setCoupon('')} className='hover:text-red-700 transition cursor-pointer' />
+                            <XIcon size={18} onClick={() => setCoupon(null)} className='hover:text-red-700 transition cursor-pointer' />
                         </div>
                     )
                 }
