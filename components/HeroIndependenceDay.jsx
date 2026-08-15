@@ -74,7 +74,7 @@ const HeroIndependenceDay = () => {
                         </Link>
                     </div>
 
-                    <img priority="true" className='w-full sm:max-w-sm lg:max-w-md animate-fadeInRight absolute bottom-0 right-0 object-contain' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="Independence Day Celebration" />
+                    <img priority="true" className='w-40 sm:w-72 lg:w-96 animate-fadeInRight absolute -bottom-8 -right-4 sm:bottom-0 sm:right-0 object-contain pointer-events-none' style={{ animationDelay: '0.2s', maxHeight: '100%' }} src={assets.hero_model_img} alt="Independence Day Celebration" />
                 </div>
 
                 {/* Right Side Cards */}
