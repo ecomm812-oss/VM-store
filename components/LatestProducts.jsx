@@ -7,13 +7,15 @@ const LatestProducts = ({ products = [] }) => {
     const visibleCount = Math.min(latestProducts.length, Array.isArray(products) ? products.length : 0)
 
     return (
-        <div className='px-6 my-30 max-w-6xl mx-auto animate-fadeInUp'>
+        <div className='px-3 sm:px-6 my-16 sm:my-30 max-w-6xl mx-auto animate-fadeInUp overflow-x-hidden'>
             <div className='animate-slideInUp'>
                 <Title title='Latest Products' description={`Showing ${visibleCount} of ${products.length} products`} href='/shop' />
             </div>
-            <div className='mt-12 grid grid-cols-2 sm:flex flex-wrap gap-6 justify-between'>
+            <div className='mt-6 sm:mt-12 flex flex-wrap gap-3 sm:gap-6 lg:gap-8 justify-center sm:justify-start'>
                 {latestProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+                    <div key={product.id} className='flex justify-center'>
+                        <ProductCard product={product} />
+                    </div>
                 ))}
             </div>
         </div>

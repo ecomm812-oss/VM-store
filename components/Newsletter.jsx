@@ -57,19 +57,19 @@ const Newsletter = () => {
   }
 
   return (
-    <div className='flex flex-col items-center mx-4 my-36 animate-fadeInUp'>
+    <div className='flex flex-col items-center mx-3 sm:mx-4 lg:mx-6 my-16 sm:my-36 animate-fadeInUp overflow-x-hidden'>
       <Title
         title='Join Newsletter'
-        description='Subscribe to get exclusive deals, new arrivals, and insider updates delivered straight to your inbox every week.'
+        description='Subscribe to get exclusive deals, new arrivals, and insider updates delivered straight to your inbox.'
         visibleButton={false}
       />
 
-      <form onSubmit={handleSubmit} className='flex w-full max-w-xl my-10'>
-        <div className='flex bg-slate-100 text-sm p-1 rounded-full w-full border-2 border-white ring ring-slate-200 transition-all duration-300 hover:ring-2 hover:ring-green-300 focus-within:ring-2 focus-within:ring-green-300'>
+      <form onSubmit={handleSubmit} className='flex w-full max-w-lg my-6 sm:my-10 px-0'>
+        <div className='flex bg-slate-100 text-xs sm:text-sm p-1 rounded-full w-full border-2 border-white ring ring-slate-200 transition-all duration-300 hover:ring-2 hover:ring-green-300 focus-within:ring-2 focus-within:ring-green-300'>
           <input
-            className='flex-1 pl-5 outline-none bg-transparent transition-colors duration-300'
+            className='flex-1 pl-3 sm:pl-5 outline-none bg-transparent transition-colors duration-300 text-xs sm:text-sm'
             type='email'
-            placeholder='Enter your email address'
+            placeholder='Enter your email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             aria-label='Newsletter email'
@@ -79,7 +79,7 @@ const Newsletter = () => {
           <button
             type='submit'
             disabled={status === 'loading'}
-            className='font-medium bg-green-500 text-white px-7 py-3 rounded-full hover:scale-103 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed'
+            className='font-medium bg-green-500 text-white px-4 sm:px-7 py-2 sm:py-3 rounded-full hover:scale-103 active:scale-95 transition disabled:opacity-60 disabled:cursor-not-allowed text-xs sm:text-sm whitespace-nowrap'
           >
             {status === 'loading' ? 'Saving...' : 'Get Updates'}
           </button>
@@ -87,7 +87,7 @@ const Newsletter = () => {
       </form>
 
       {message && (
-        <p className={`mt-2 text-sm ${status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+        <p className={`mt-2 text-xs sm:text-sm text-center px-4 ${status === 'success' ? 'text-green-600' : 'text-red-600'}`}>
           {message}
         </p>
       )}

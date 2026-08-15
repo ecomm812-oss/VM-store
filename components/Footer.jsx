@@ -47,31 +47,31 @@ const Footer = () => {
     ]
 
     return (
-        <footer className="mx-6 bg-white animate-fadeInUp">
+        <footer className="mx-3 sm:mx-4 lg:mx-6 bg-white animate-fadeInUp overflow-x-hidden">
             <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col md:flex-row items-start justify-between gap-10 py-10 border-b border-slate-500/30 text-slate-500">
-                    <div className="animate-slideInUp">
-                        <Link href="/" className="text-4xl font-semibold text-slate-700 transition-transform duration-300 hover:scale-105">
-                            <span className="text-green-600">VM</span>cart<span className="text-green-600 text-5xl leading-0">.</span>
+                <div className="flex flex-col md:flex-row items-start justify-between gap-6 sm:gap-8 lg:gap-10 py-8 sm:py-10 border-b border-slate-500/30 text-slate-500">
+                    <div className="animate-slideInUp w-full md:w-auto">
+                        <Link href="/" className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-slate-700 transition-transform duration-300 hover:scale-105 inline-block">
+                            <span className="text-green-600">VM</span>cart<span className="text-green-600 text-3xl sm:text-4xl lg:text-5xl leading-0">.</span>
                         </Link>
-                        <p className="max-w-[410px] mt-6 text-sm">Welcome to VM cart, your ultimate destination for the latest and smartest gadgets. From smartphones and smartwatches to essential accessories, we bring you the best in innovation — all in one place.</p>
-                        <div className="flex items-center gap-3 mt-5">
+                        <p className="max-w-xs sm:max-w-sm mt-4 sm:mt-6 text-xs sm:text-sm">Welcome to VM cart, your ultimate destination for the latest and smartest gadgets. From smartphones to accessories, we bring you the best in innovation.</p>
+                        <div className="flex items-center gap-2 sm:gap-3 mt-4 sm:mt-5 flex-wrap">
                             {socialIcons.map((item, i) => (
-                                <Link href={item.link} key={i} className="flex items-center justify-center w-10 h-10 bg-slate-100 hover:scale-125 hover:border border-slate-300 transition-all duration-300 rounded-full hover-glow">
+                                <Link href={item.link} key={i} className="flex items-center justify-center w-9 sm:w-10 h-9 sm:h-10 bg-slate-100 hover:scale-125 hover:border border-slate-300 transition-all duration-300 rounded-full hover-glow flex-shrink-0">
                                     <item.icon />
                                 </Link>
                             ))}
                         </div>
                     </div>
-                    <div className="flex flex-wrap justify-between w-full md:w-[45%] gap-5 text-sm animate-slideInUp" style={{ animationDelay: '0.1s' }}>
+                    <div className="flex flex-wrap justify-start sm:justify-between gap-4 sm:gap-6 w-full md:w-auto md:flex-nowrap text-xs sm:text-sm animate-slideInUp" style={{ animationDelay: '0.1s' }}>
                         {linkSections.map((section, index) => (
-                            <div key={index} className="stagger-item">
-                                <h3 className="font-medium text-slate-700 md:mb-5 mb-3 transition-colors duration-300">{section.title}</h3>
-                                <ul className="space-y-2.5">
+                            <div key={index} className="stagger-item min-w-max">
+                                <h3 className="font-medium text-slate-700 mb-2 sm:mb-3 md:mb-5 transition-colors duration-300">{section.title}</h3>
+                                <ul className="space-y-1.5 sm:space-y-2.5">
                                     {section.links.map((link, i) => (
                                         <li key={i} className="flex items-center gap-2 transition-all duration-300 hover:translate-x-1">
                                             {link.icon && <link.icon />}
-                                            <Link href={link.path} className="hover:underline transition-all duration-300 hover:text-slate-700">{link.text}</Link>
+                                            <Link href={link.path} className="hover:underline transition-all duration-300 hover:text-slate-700 text-xs sm:text-sm">{link.text}</Link>
                                         </li>
                                     ))}
                                 </ul>
@@ -79,7 +79,7 @@ const Footer = () => {
                         ))}
                     </div>
                 </div>
-                <p className="py-4 text-sm text-slate-500">
+                <p className="py-4 text-xs sm:text-sm text-slate-500 text-center md:text-left">
                     Copyright 2026 © VM Cart All Right Reserved.
                 </p>
             </div>
