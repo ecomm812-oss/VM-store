@@ -1,4 +1,6 @@
-import Hero from '@/components/Hero'
+import HeroIndependenceDay from '@/components/HeroIndependenceDay'
+import CountdownTimer from '@/components/CountdownTimer'
+import IndependenceDayTestimonials from '@/components/IndependenceDayTestimonials'
 import Newsletter from '@/components/Newsletter'
 import OurSpecs from '@/components/OurSpec'
 import LatestProducts from '@/components/LatestProducts'
@@ -47,9 +49,11 @@ export default async function Home() {
         return (
             <div>
                 <StructuredData data={organizationSchema} />
-                <Hero />
+                <HeroIndependenceDay />
+                <CountdownTimer targetDate='2026-08-15' title='🇮🇳 Independence Day Sale Ends In' />
                 <LatestProducts products={latestProducts} />
                 <BestSelling products={bestSellingProducts} />
+                <IndependenceDayTestimonials />
                 <OurSpecs />
                 <Newsletter />
             </div>
@@ -58,11 +62,13 @@ export default async function Home() {
         console.error('Home page render failed:', error)
         return (
             <div className="min-h-screen bg-white">
-                <Hero />
+                <HeroIndependenceDay />
+                <CountdownTimer targetDate='2026-08-15' title='🇮🇳 Independence Day Sale Ends In' />
                 <div className="mx-6 my-20 max-w-6xl rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center shadow-sm">
                     <h2 className="text-xl font-semibold text-slate-800">Welcome to VM Cart</h2>
                     <p className="mt-2 text-sm text-slate-600">The storefront is loading with a safe fallback so you can still browse the experience.</p>
                 </div>
+                <IndependenceDayTestimonials />
                 <OurSpecs />
                 <Newsletter />
             </div>

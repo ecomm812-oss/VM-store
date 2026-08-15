@@ -1,0 +1,160 @@
+/* Independence Day Patriotic Animations */
+
+@keyframes waveFlag {
+    0% {
+        transform: rotateZ(-5deg);
+    }
+    50% {
+        transform: rotateZ(5deg);
+    }
+    100% {
+        transform: rotateZ(-5deg);
+    }
+}
+
+@keyframes patrioticGlow {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(255, 153, 51, 0.5), 0 0 20px rgba(19, 136, 8, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(255, 153, 51, 0.8), 0 0 30px rgba(19, 136, 8, 0.6), 0 0 40px rgba(255, 215, 0, 0.4);
+    }
+}
+
+@keyframes tricolorShimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes ashokaSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes floatingConfetti {
+    0% {
+        transform: translateY(0) rotateZ(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-100px) rotateZ(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes patrioticPulse {
+    0%, 100% {
+        background-color: #FF9933;
+    }
+    25% {
+        background-color: #FFFFFF;
+    }
+    50% {
+        background-color: #138808;
+    }
+    75% {
+        background-color: #FFFFFF;
+    }
+}
+
+/* Utility Classes */
+.wave-flag {
+    animation: waveFlag 1.5s ease-in-out infinite;
+}
+
+.patriotic-glow {
+    animation: patrioticGlow 2s ease-in-out infinite;
+}
+
+.tricolor-shimmer {
+    background: linear-gradient(90deg, #FF9933, #FFFFFF, #138808, #FF9933);
+    background-size: 1000px 100%;
+    animation: tricolorShimmer 3s linear infinite;
+}
+
+.ashoka-spin {
+    animation: ashokaSpin 4s linear infinite;
+}
+
+.floating-confetti {
+    animation: floatingConfetti 2s ease-out forwards;
+}
+
+.patriotic-pulse {
+    animation: patrioticPulse 3s ease-in-out infinite;
+}
+
+/* Independence Day themed gradient */
+.independence-gradient {
+    background: linear-gradient(135deg, #FF9933 0%, #FFFFFF 50%, #138808 100%);
+}
+
+.independence-gradient-text {
+    background: linear-gradient(90deg, #FF9933, #138808);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Saffron, White, Green color scheme */
+.saffron-bg { background-color: #FF9933; }
+.white-bg { background-color: #FFFFFF; }
+.green-bg { background-color: #138808; }
+
+.saffron-text { color: #FF9933; }
+.white-text { color: #FFFFFF; }
+.green-text { color: #138808; }
+
+.saffron-border { border-color: #FF9933; }
+.green-border { border-color: #138808; }
+
+/* Patriotic shadows */
+.patriotic-shadow {
+    box-shadow: 0 4px 15px rgba(255, 153, 51, 0.3), 0 0 20px rgba(19, 136, 8, 0.2);
+}
+
+/* Independence Day card effects */
+.independence-card {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    background-image: linear-gradient(#FFFFFF, #FFFFFF), 
+                      linear-gradient(90deg, #FF9933, #138808);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+}
+
+.independence-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 153, 51, 0.1), rgba(19, 136, 8, 0.1));
+    pointer-events: none;
+}
+
+/* Tricolor banner effect */
+.tricolor-banner {
+    display: flex;
+    height: 20px;
+    background: linear-gradient(90deg, #FF9933 33.33%, #FFFFFF 33.33%, #FFFFFF 66.66%, #138808 66.66%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .wave-flag {
+        animation-duration: 1s;
+    }
+    
+    .ashoka-spin {
+        animation-duration: 3s;
+    }
+}

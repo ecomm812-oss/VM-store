@@ -1,0 +1,35 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "npm install",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"install"
+			],
+			"group": "build"
+		},
+		{
+			"label": "npm install cmd",
+			"type": "shell",
+			"command": "cmd /c npm",
+			"args": [
+				"install"
+			],
+			"group": "build"
+		},
+		{
+			"label": "npm install",
+			"type": "shell",
+			"command": "powershell -ExecutionPolicy Bypass -Command npm install",
+			"group": "build"
+		},
+		{
+			"label": "npm install",
+			"type": "shell",
+			"command": "\"C:\\Program Files\\nodejs\\npm.cmd\" install",
+			"group": "build"
+		}
+	]
+}
