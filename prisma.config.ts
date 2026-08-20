@@ -1,9 +1,7 @@
-module.exports = {
-  datasource: {
-    // Keep Prisma CLI and app runtime on the same database.
-    // Falling back to SQLite can cause "data not showing" when app reads Postgres.
-    url: process.env.DATABASE_URL || process.env.DIRECT_URL || "postgresql://neondb_owner:npg_XFAZRBGHya29@ep-super-flower-amd77jze-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require"
-  }
-}
+import { defineConfig } from 'prisma/config'
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+})
 
 

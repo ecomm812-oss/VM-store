@@ -1,7 +1,5 @@
-module.exports = {
-  datasource: {
-    // Keep Prisma CLI and app runtime on the same database.
-    // Move connection URLs out of schema for Prisma 7.
-    url: process.env.DATABASE_URL || process.env.DIRECT_URL || "postgresql://neondb_owner:npg_XFAZRBGHya29@ep-super-flower-amd77jze-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=verify-full&channel_binding=require"
-  },
-}
+const { defineConfig } = require('prisma/config')
+
+module.exports = defineConfig({
+  schema: 'prisma/schema.prisma',
+})
