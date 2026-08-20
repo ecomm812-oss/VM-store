@@ -16,17 +16,16 @@ const IndependenceDayPage = ({ latestProducts = [], bestSellingProducts = [] }) 
 
             {/* Countdown Timer */}
             <CountdownTimer 
-                targetDate='2026-08-15' 
-                title='🇮🇳 Independence Day Sale Ends In'
+                targetDate='2026-08-09' 
+                title='🎀 Raksha Bandhan Sale Ends In'
             />
 
-            {/* Special Offers Section */}
             <div className='max-w-7xl mx-auto mx-6 my-16'>
                 <div className='text-center mb-12 animate-fadeInUp'>
-                    <h2 className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-green-600 bg-clip-text text-transparent mb-3'>
-                        🎉 Independence Day Specials
+                    <h2 className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#7a0b2d] to-[#d4a124] bg-clip-text text-transparent mb-3'>
+                        🎁 Raksha Bandhan Specials
                     </h2>
-                    <p className='text-slate-600 text-lg'>Handpicked products for your celebration</p>
+                    <p className='text-slate-600 text-lg'>Handpicked products for your festive celebration</p>
                 </div>
             </div>
 
@@ -63,12 +62,12 @@ const IndependenceDayPage = ({ latestProducts = [], bestSellingProducts = [] }) 
                     </div>
                     <div className='relative z-10'>
                         <h3 className='text-3xl md:text-4xl font-bold text-white mb-4'>
-                            Celebrate India's Independence! 🇮🇳
+                            Celebrate the Rakhi bond! 💝
                         </h3>
                         <p className='text-white text-lg mb-6 max-w-2xl mx-auto'>
-                            Shop with pride, support local businesses, and enjoy unbeatable Independence Day deals at VM Cart.
+                            Shop with love, surprise your sibling, and enjoy unbeatable Raksha Bandhan deals at VM Cart.
                         </p>
-                        <a href='/shop' className='inline-block bg-white text-orange-600 font-bold px-8 py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105'>
+                        <a href='/shop' className='inline-block bg-white text-[#7a0b2d] font-bold px-8 py-4 rounded-lg hover:shadow-lg transition-all duration-300 transform hover:scale-105'>
                             Continue Shopping 🛍️
                         </a>
                     </div>

@@ -28,15 +28,13 @@ const IndependenceDayNewsletter = () => {
     return (
         <div className='max-w-7xl mx-auto my-16 mx-6'>
             <div className='relative rounded-3xl overflow-hidden shadow-2xl'>
-                {/* Background with patriotic gradient */}
-                <div className='absolute inset-0 bg-gradient-to-r from-orange-500 via-white to-green-600 opacity-90'></div>
+                <div className='absolute inset-0 bg-gradient-to-r from-[#7a0b2d] via-[#fbe4ee] to-[#d4a124] opacity-90'></div>
 
-                {/* Animated background pattern */}
                 <div className='absolute inset-0 opacity-10'>
-                    <div className='absolute top-0 left-0 text-9xl animate-bounce' style={{ animationDelay: '0s' }}>🇮🇳</div>
-                    <div className='absolute top-20 right-10 text-8xl animate-bounce' style={{ animationDelay: '0.5s' }}>⭐</div>
-                    <div className='absolute bottom-10 left-20 text-7xl animate-bounce' style={{ animationDelay: '1s' }}>🎉</div>
-                    <div className='absolute bottom-20 right-0 text-8xl animate-bounce' style={{ animationDelay: '0.7s' }}>🇮🇳</div>
+                    <div className='absolute top-0 left-0 text-9xl animate-bounce' style={{ animationDelay: '0s' }}>🎀</div>
+                    <div className='absolute top-20 right-10 text-8xl animate-bounce' style={{ animationDelay: '0.5s' }}>💐</div>
+                    <div className='absolute bottom-10 left-20 text-7xl animate-bounce' style={{ animationDelay: '1s' }}>🎁</div>
+                    <div className='absolute bottom-20 right-0 text-8xl animate-bounce' style={{ animationDelay: '0.7s' }}>💝</div>
                 </div>
 
                 {/* Content */}
@@ -44,17 +42,17 @@ const IndependenceDayNewsletter = () => {
                     <div className='flex items-center justify-center gap-3 mb-4 animate-fadeInDown'>
                         <Heart className='text-white animate-pulse' size={28} />
                         <h2 className='text-3xl md:text-4xl font-bold text-white'>
-                            Celebrate Independence Day
+                            Celebrate Raksha Bandhan
                         </h2>
                         <Heart className='text-white animate-pulse' size={28} />
                     </div>
 
                     <p className='text-white text-lg md:text-xl mb-2 font-semibold'>
-                        Get Exclusive Patriotic Deals & Offers
+                        Get Exclusive Festive Deals & Offers
                     </p>
 
                     <p className='text-white text-sm md:text-base opacity-90 mb-8 max-w-2xl mx-auto'>
-                        Subscribe to our Independence Day newsletter and receive exclusive discounts, early access to special offers, and curated patriotic product collections delivered straight to your inbox. 🎁
+                        Subscribe to our Raksha Bandhan newsletter and receive exclusive discounts, early access to special offers, and curated gifting picks delivered straight to your inbox. 🎁
                     </p>
 
                     {/* Newsletter Form */}
@@ -73,7 +71,7 @@ const IndependenceDayNewsletter = () => {
                         <button
                             type='submit'
                             disabled={loading}
-                            className='bg-gradient-to-r from-slate-800 to-slate-900 text-white px-8 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-70'
+                            className='bg-gradient-to-r from-[#5c0a2d] to-[#2b0f1b] text-white px-8 py-4 rounded-lg font-semibold flex items-center justify-center gap-2 hover:shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 disabled:opacity-70'
                         >
                             {loading ? (
                                 <span className='animate-spin'>⏳</span>
@@ -86,10 +84,9 @@ const IndependenceDayNewsletter = () => {
                         </button>
                     </form>
 
-                    {/* Success Message */}
                     {subscribed && (
-                        <div className='animate-bounce bg-green-500 text-white px-6 py-3 rounded-lg max-w-xl mx-auto text-sm md:text-base font-semibold'>
-                            🎉 Thank you! Check your email for exclusive Independence Day offers!
+                        <div className='animate-bounce bg-[#2d9b6c] text-white px-6 py-3 rounded-lg max-w-xl mx-auto text-sm md:text-base font-semibold'>
+                            🎉 Thank you! Check your email for exclusive Raksha Bandhan offers!
                         </div>
                     )}
 
@@ -103,12 +100,12 @@ const IndependenceDayNewsletter = () => {
                         <div className='bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-4 text-white animate-fadeInUp'>
                             <p className='text-2xl mb-2'>⚡</p>
                             <p className='font-semibold'>Early Access</p>
-                            <p className='text-sm text-white text-opacity-90'>Get first dibs on new products</p>
+                            <p className='text-sm text-white text-opacity-90'>Get first dibs on festive products</p>
                         </div>
                         <div className='bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-4 text-white animate-fadeInRight'>
-                            <p className='text-2xl mb-2'>🇮🇳</p>
-                            <p className='font-semibold'>Patriotic Vibes</p>
-                            <p className='text-sm text-white text-opacity-90'>Exclusive Independence Day content</p>
+                            <p className='text-2xl mb-2'>💝</p>
+                            <p className='font-semibold'>Festive Joy</p>
+                            <p className='text-sm text-white text-opacity-90'>Exclusive Raksha Bandhan inspiration</p>
                         </div>
                     </div>
                 </div>

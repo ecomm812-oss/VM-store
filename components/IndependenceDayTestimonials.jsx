@@ -12,7 +12,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Rajesh Kumar',
             location: 'Delhi',
             rating: 5,
-            text: 'Amazing Independence Day deals! Got premium gadgets at incredible prices. VM Cart is truly celebrating with us! 🇮🇳',
+            text: 'The Raksha Bandhan collection is beautiful! Found the perfect gifts and the deals were brilliant. VM Cart made the celebration extra special! 🎀',
             avatar: '👨‍💼',
             title: 'Tech Enthusiast'
         },
@@ -21,7 +21,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Priya Singh',
             location: 'Mumbai',
             rating: 5,
-            text: 'Love the patriotic theme and the special offers! Fast delivery and excellent customer service. Best shopping experience!',
+            text: 'Loved the festive vibe and the thoughtful offers. Fast delivery and excellent service made my gifting so easy and joyful!',
             avatar: '👩‍💼',
             title: 'Customer'
         },
@@ -30,7 +30,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Arjun Patel',
             location: 'Bangalore',
             rating: 5,
-            text: 'Supporting independence and getting amazing deals on quality products. This is how Independence Day shopping should be!',
+            text: 'The Raksha Bandhan specials were so well-curated. Great value, quality products, and a warm festive shopping experience.',
             avatar: '👨‍🎓',
             title: 'Student'
         },
@@ -39,7 +39,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Neha Sharma',
             location: 'Pune',
             rating: 5,
-            text: 'The Independence Day collection is fantastic! Great variety, authentic products, and patriotic spirit throughout!',
+            text: 'The festive collection is stunning! A perfect mix of traditional charm and modern gifting ideas for my brother.',
             avatar: '👩‍🏫',
             title: 'Professional'
         },
@@ -48,7 +48,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Vikram Desai',
             location: 'Hyderabad',
             rating: 5,
-            text: 'Celebrating India independence with quality products from VM Cart. Proud to support local businesses! 🇮🇳',
+            text: 'Celebrating Raksha Bandhan with thoughtful gifts from VM Cart felt truly special. Proud to shop here for meaningful moments! 💝',
             avatar: '👨‍🏥',
             title: 'Entrepreneur'
         }
@@ -82,13 +82,13 @@ const IndependenceDayTestimonials = () => {
     return (
         <div className='max-w-7xl mx-auto my-16 mx-6'>
             <div className='text-center mb-12 animate-fadeInUp'>
-                <h2 className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-green-600 bg-clip-text text-transparent mb-3'>
-                    What Our Customers Say 🇮🇳
+                <h2 className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#7a0b2d] to-[#d4a124] bg-clip-text text-transparent mb-3'>
+                    What Our Customers Say 💐
                 </h2>
-                <p className='text-slate-600 text-lg'>Celebrating Independence Day with our happy customers</p>
+                <p className='text-slate-600 text-lg'>Celebrating Raksha Bandhan with our happy customers</p>
             </div>
 
-            <div className='relative bg-gradient-to-r from-orange-50 via-white to-green-50 rounded-3xl p-8 md:p-12 border-2 border-orange-200 shadow-lg'>
+            <div className='relative bg-gradient-to-r from-[#fff1f6] via-white to-[#fff8d6] rounded-3xl p-8 md:p-12 border-2 border-[#e9bfd0] shadow-lg'>
                 {/* Testimonial Content */}
                 <div className='min-h-80 flex flex-col justify-between animate-fadeInUp'>
                     <div>

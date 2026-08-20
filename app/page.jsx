@@ -50,7 +50,7 @@ export default async function Home() {
             <div>
                 <StructuredData data={organizationSchema} />
                 <HeroIndependenceDay />
-                <CountdownTimer targetDate='2026-08-15' title='🇮🇳 Independence Day Sale Ends In' />
+                <CountdownTimer targetDate='2026-08-09' title='🎀 Raksha Bandhan Sale Ends In' />
                 <LatestProducts products={latestProducts} />
                 <BestSelling products={bestSellingProducts} />
                 <IndependenceDayTestimonials />
@@ -63,7 +63,7 @@ export default async function Home() {
         return (
             <div className="min-h-screen bg-white">
                 <HeroIndependenceDay />
-                <CountdownTimer targetDate='2026-08-15' title='🇮🇳 Independence Day Sale Ends In' />
+                <CountdownTimer targetDate='2026-08-09' title='🎀 Raksha Bandhan Sale Ends In' />
                 <div className="mx-3 sm:mx-4 lg:mx-6 my-12 sm:my-20 max-w-6xl rounded-xl sm:rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8 text-center shadow-sm">
                     <h2 className="text-base sm:text-xl font-semibold text-slate-800">Welcome to VM Cart</h2>
                     <p className="mt-2 text-xs sm:text-sm text-slate-600">The storefront is loading with a safe fallback so you can still browse the experience.</p>
