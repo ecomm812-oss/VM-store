@@ -33,18 +33,18 @@ const HeroIndependenceDay = () => {
                 <div className='relative flex-1 flex flex-col rounded-[36px] sm:rounded-[42px] xl:min-h-[620px] group animate-fadeInUp overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(134,239,172,0.45),_transparent_38%),linear-gradient(135deg,_#f0fdf4_0%,_#dcfce7_28%,_#bbf7d0_100%)] shadow-[0_30px_80px_rgba(34,197,94,0.18)]'>
                     <div className='absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.45),transparent_45%,rgba(255,255,255,0.12))]'></div>
 
-                    <div className='relative z-10 flex flex-1 flex-col justify-center p-5 sm:p-8 lg:p-12 xl:p-14'>
+                    <div className='relative z-10 flex flex-1 flex-col justify-center p-5 sm:p-8 lg:p-10 xl:p-12 lg:pr-[26rem] xl:pr-[30rem]'>
                         <div className='inline-flex items-center gap-2 sm:gap-3 bg-white/70 text-[#0a5f39] border border-[#9ae6b4] backdrop-blur-sm pr-3 sm:pr-4 p-1 rounded-full text-xs transition-all duration-300 hover:bg-white/90 flex-wrap w-fit'>
                             <span className='bg-[rgb(5,223,114)] px-2 sm:px-3 py-1 rounded-full text-white text-xs font-bold'>NEW</span>
                             <span className='animate-pulse text-xs'>Fresh drops this week</span>
                             <ChevronRightIcon className='group-hover:ml-2 transition-all hidden sm:inline' size={14} />
                         </div>
 
-                        <h2 className='mt-5 sm:mt-6 text-[2.5rem] sm:text-[4rem] md:text-[5.2rem] lg:text-[6.4rem] leading-[0.9] font-black tracking-[-0.06em] text-[#0b3b29] max-w-[720px] animate-slideInUp' style={{ animationDelay: '0.1s' }}>
+                        <h2 className='mt-5 sm:mt-6 text-[2.6rem] sm:text-[4rem] md:text-[5rem] lg:text-[6rem] xl:text-[7rem] leading-[0.82] font-black tracking-[-0.08em] text-[#0b3b29] max-w-[520px] animate-slideInUp' style={{ animationDelay: '0.1s' }}>
                             Upgrade your everyday essentials.
                         </h2>
 
-                        <p className='mt-6 text-[#0f5132]/80 text-base sm:text-lg lg:text-2xl font-medium max-w-[680px] animate-slideInUp' style={{ animationDelay: '0.15s' }}>
+                        <p className='mt-5 text-[#0f5132]/80 text-base sm:text-lg lg:text-xl font-medium max-w-[560px] animate-slideInUp' style={{ animationDelay: '0.15s' }}>
                             Smart finds, elevated quality, and unbeatable value all in one place.
                         </p>
 
@@ -61,7 +61,7 @@ const HeroIndependenceDay = () => {
                             </Link>
                         </div>
 
-                        <div className='mt-8 grid grid-cols-3 gap-3 sm:gap-4 max-w-[540px] animate-slideInUp' style={{ animationDelay: '0.25s' }}>
+                        <div className='mt-8 grid grid-cols-3 gap-3 sm:gap-4 max-w-[520px] animate-slideInUp' style={{ animationDelay: '0.25s' }}>
                             <div className='rounded-[22px] border border-[#9ae6b4] bg-white/50 p-4 backdrop-blur-sm'>
                                 <p className='text-[1.6rem] sm:text-[2.1rem] font-black text-[#0b3b29]'>{currency}399</p>
                                 <p className='text-[10px] sm:text-xs text-[#0f5132] mt-1'>Starting from</p>
@@ -77,8 +77,8 @@ const HeroIndependenceDay = () => {
                         </div>
                     </div>
 
-                    <div className='absolute right-0 bottom-0 z-20 pointer-events-none w-[42%] max-w-[560px] min-w-[240px] lg:w-[470px] xl:w-[560px]'>
-                        <img priority="true" className='block w-full h-auto animate-fadeInRight object-contain drop-shadow-[0_40px_40px_rgba(0,0,0,0.35)]' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="Premium product showcase" />
+                    <div className='absolute right-[-2%] bottom-0 z-20 pointer-events-none w-[36%] min-w-[220px] max-w-[440px] lg:w-[400px] xl:w-[470px]'>
+                        <img priority="true" className='block w-full h-auto max-h-[620px] object-contain animate-fadeInRight drop-shadow-[0_35px_35px_rgba(0,0,0,0.28)]' style={{ animationDelay: '0.2s' }} src={assets.hero_model_img} alt="Premium product showcase" />
                     </div>
                 </div>
 
