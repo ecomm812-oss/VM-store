@@ -91,62 +91,68 @@ async function loadProduct(productId) {
     if (!productId) return null
 
     try {
-        const product = await prisma.product.findUnique({
-            where: { id: productId },
-            select: {
-                id: true,
-                name: true,
-                description: true,
-                mrp: true,
-                price: true,
-                deliveryCharge: true,
-                images: true,
-                sizes: true,
-                category: true,
-                inStock: true,
-                storeId: true,
-                createdAt: true,
-                updatedAt: true,
-                store: {
-                    select: {
-                        id: true,
-                        name: true,
-                        logo: true,
-                        username: true
-                    }
-                },
-                rating: {
-                    take: 5,
-                    orderBy: {
-                        createdAt: 'desc'
+        const product = await Promise.race([
+            prisma.product.findUnique({
+                where: { id: productId },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    mrp: true,
+                    price: true,
+                    deliveryCharge: true,
+                    images: true,
+                    sizes: true,
+                    category: true,
+                    inStock: true,
+                    storeId: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    store: {
+                        select: {
+                            id: true,
+                            name: true,
+                            logo: true,
+                            username: true
+                        }
                     },
-                    include: {
-                        user: {
-                            select: {
-                                name: true,
-                                image: true
+                    rating: {
+                        take: 5,
+                        orderBy: {
+                            createdAt: 'desc'
+                        },
+                        include: {
+                            user: {
+                                select: {
+                                    name: true,
+                                    image: true
+                                }
                             }
                         }
-                    }
-                },
-                _count: {
-                    select: {
-                        rating: true
+                    },
+                    _count: {
+                        select: {
+                            rating: true
+                        }
                     }
                 }
-            }
-        })
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Product lookup timeout')), 2500))
+        ])
 
         if (product) {
-            const ratingStats = await prisma.rating.aggregate({
-                where: { productId },
-                _avg: {
-                    rating: true
-                },
-                _count: {
-                    _all: true
-                }
-            })
+            const ratingStats = await Promise.race([
+                prisma.rating.aggregate({
+                    where: { productId },
+                    _avg: {
+                        rating: true
+                    },
+                    _count: {
+                        _all: true
+                    }
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Rating lookup timeout')), 1500))
+            ])
 
             return normalizeProductResponse({
                 ...product,
@@ -162,7 +168,7 @@ async function loadProduct(productId) {
             if (fallbackProduct) return fallbackProduct
         }
 
-        if (shouldUseDevProductFallback(error)) {
+        if (shouldUseDevProductFallback(error) || error?.message?.includes('timeout')) {
             const devProduct = await getDevProductById(productId)
             if (devProduct) return devProduct
         }
