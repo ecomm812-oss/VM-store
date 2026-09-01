@@ -2,7 +2,7 @@ import Title from './Title'
 import ProductCard from './ProductCard'
 
 const LatestProducts = ({ products = [] }) => {
-    const displayQuantity = 4
+    const displayQuantity = 10
     const latestProducts = Array.isArray(products) ? products.slice(0, displayQuantity) : []
     const visibleCount = Math.min(latestProducts.length, Array.isArray(products) ? products.length : 0)
 
