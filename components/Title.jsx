@@ -12,12 +12,16 @@ const Title = ({ title, description, visibleButton = true, href = '' }) => {
     }
 
     return (
-        <div className='flex flex-col items-center animate-fadeInUp px-3 sm:px-6 overflow-x-hidden'>
-            <h2 className='text-xl sm:text-2xl font-semibold text-slate-800 transition-all duration-300 text-center'>{title}</h2>
-            <Link href={href} onMouseEnter={handlePrefetch} onFocus={handlePrefetch} className='flex flex-col sm:flex-row items-center gap-3 sm:gap-5 text-xs sm:text-sm text-slate-600 mt-2 transition-all duration-300 hover:text-slate-800 group'>
-                <p className='max-w-xs sm:max-w-lg text-center'>{description}</p>
+        <div className='flex w-full flex-col items-center animate-fadeInUp px-0 sm:px-3 overflow-x-hidden'>
+            <div className='mb-3 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-violet-700'>
+                <span className='inline-block h-2 w-2 rounded-full bg-violet-600'></span>
+                Curated picks
+            </div>
+            <h2 className='text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 transition-all duration-300 text-center tracking-tight'>{title}</h2>
+            <Link href={href} onMouseEnter={handlePrefetch} onFocus={handlePrefetch} className='flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-5 text-xs sm:text-sm text-slate-600 mt-3 transition-all duration-300 hover:text-slate-800 group'>
+                <p className='max-w-xs sm:max-w-lg text-center text-slate-600'>{description}</p>
                 {visibleButton && (
-                    <button className='text-green-500 flex items-center gap-1 transition-all duration-300 group-hover:gap-2 group-hover:translate-x-1 whitespace-nowrap'>
+                    <button className='inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 shadow-sm transition-all duration-300 group-hover:gap-2 group-hover:border-violet-200 group-hover:text-violet-700 whitespace-nowrap'>
                         View more <ArrowRight size={12} className='transition-transform duration-300 group-hover:rotate-45' />
                     </button>
                 )}

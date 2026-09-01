@@ -12,7 +12,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Rajesh Kumar',
             location: 'Delhi',
             rating: 5,
-            text: 'The Raksha Bandhan collection is beautiful! Found the perfect gifts and the deals were brilliant. VM Cart made the celebration extra special! 🎀',
+            text: 'The collection is beautiful! Found the perfect items and the deals were brilliant. VM Cart made shopping feel easy and enjoyable.',
             avatar: '👨‍💼',
             title: 'Tech Enthusiast'
         },
@@ -21,7 +21,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Priya Singh',
             location: 'Mumbai',
             rating: 5,
-            text: 'Loved the festive vibe and the thoughtful offers. Fast delivery and excellent service made my gifting so easy and joyful!',
+            text: 'Loved the curated offers and the smooth shopping experience. Fast delivery and excellent service made the whole order stress-free.',
             avatar: '👩‍💼',
             title: 'Customer'
         },
@@ -30,7 +30,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Arjun Patel',
             location: 'Bangalore',
             rating: 5,
-            text: 'The Raksha Bandhan specials were so well-curated. Great value, quality products, and a warm festive shopping experience.',
+            text: 'The seasonal specials were so well-curated. Great value, quality products, and a warm shopping experience from start to finish.',
             avatar: '👨‍🎓',
             title: 'Student'
         },
@@ -39,7 +39,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Neha Sharma',
             location: 'Pune',
             rating: 5,
-            text: 'The festive collection is stunning! A perfect mix of traditional charm and modern gifting ideas for my brother.',
+            text: 'The product range is stunning! A perfect mix of everyday essentials and thoughtful finds that fit my lifestyle.',
             avatar: '👩‍🏫',
             title: 'Professional'
         },
@@ -48,7 +48,7 @@ const IndependenceDayTestimonials = () => {
             name: 'Vikram Desai',
             location: 'Hyderabad',
             rating: 5,
-            text: 'Celebrating Raksha Bandhan with thoughtful gifts from VM Cart felt truly special. Proud to shop here for meaningful moments! 💝',
+            text: 'Shopping from VM Cart felt genuinely special. The selection was thoughtful, the value was excellent, and the entire experience was smooth.',
             avatar: '👨‍🏥',
             title: 'Entrepreneur'
         }
@@ -82,22 +82,22 @@ const IndependenceDayTestimonials = () => {
     return (
         <div className='max-w-7xl mx-auto my-16 mx-6'>
             <div className='text-center mb-12 animate-fadeInUp'>
-                <h2 className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#7a0b2d] to-[#d4a124] bg-clip-text text-transparent mb-3'>
-                    What Our Customers Say 💐
+                <p className='text-xs font-semibold uppercase tracking-[0.22em] text-violet-600 mb-3'>Reviews</p>
+                <h2 className='text-3xl md:text-4xl font-black text-slate-900 mb-3'>
+                    What Our Customers Say
                 </h2>
-                <p className='text-slate-600 text-lg'>Celebrating Raksha Bandhan with our happy customers</p>
+                <p className='text-slate-600 text-lg'>Loved by shoppers looking for great finds and better value</p>
             </div>
 
-            <div className='relative bg-gradient-to-r from-[#fff1f6] via-white to-[#fff8d6] rounded-3xl p-8 md:p-12 border-2 border-[#e9bfd0] shadow-lg'>
-                {/* Testimonial Content */}
+            <div className='relative bg-white rounded-[32px] p-8 md:p-12 border border-slate-200 shadow-[0_18px_50px_rgba(15,23,42,0.05)]'>
                 <div className='min-h-80 flex flex-col justify-between animate-fadeInUp'>
                     <div>
                         <div className='flex items-start gap-4'>
-                            <div className='text-6xl'>{testimonials[currentIndex].avatar}</div>
+                            <div className='flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-50 text-3xl shadow-sm'>{testimonials[currentIndex].avatar}</div>
                             <div className='flex-1'>
                                 <div className='flex gap-1 mb-2'>
                                     {[...Array(testimonials[currentIndex].rating)].map((_, i) => (
-                                        <Star key={i} size={20} className='fill-yellow-400 text-yellow-400' />
+                                        <Star key={i} size={20} className='fill-amber-400 text-amber-400' />
                                     ))}
                                 </div>
                                 <p className='text-slate-800 text-lg md:text-xl leading-relaxed mb-4'>
@@ -107,31 +107,37 @@ const IndependenceDayTestimonials = () => {
                         </div>
                     </div>
 
-                    <div className='mt-8'>
-                        <p className='font-bold text-slate-800 text-lg'>{testimonials[currentIndex].name}</p>
-                        <p className='text-sm text-slate-600'>{testimonials[currentIndex].title} • {testimonials[currentIndex].location}</p>
+                    <div className='mt-8 flex items-center justify-between gap-4'>
+                        <div>
+                            <p className='font-bold text-slate-800 text-lg'>{testimonials[currentIndex].name}</p>
+                            <p className='text-sm text-slate-600'>{testimonials[currentIndex].title} • {testimonials[currentIndex].location}</p>
+                        </div>
+                        <button
+                            onClick={() => setAutoPlay(!autoPlay)}
+                            className='text-xs text-slate-500 hover:text-slate-700 transition-colors rounded-full border border-slate-200 px-3 py-1.5'
+                        >
+                            {autoPlay ? 'Auto-playing' : 'Paused'}
+                        </button>
                     </div>
                 </div>
 
-                {/* Navigation Buttons */}
                 <div className='flex items-center justify-between mt-8'>
                     <button
                         onClick={prevSlide}
-                        className='bg-gradient-to-r from-orange-500 to-red-500 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-110'
+                        className='bg-slate-900 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-110'
                     >
                         <ChevronLeft size={24} />
                     </button>
 
-                    {/* Dots */}
                     <div className='flex gap-2'>
                         {testimonials.map((_, index) => (
                             <button
                                 key={index}
                                 onClick={() => goToSlide(index)}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                                className={`h-2.5 rounded-full transition-all duration-300 ${
                                     index === currentIndex
-                                        ? 'bg-gradient-to-r from-orange-500 to-green-600 w-8'
-                                        : 'bg-slate-300 hover:bg-slate-400'
+                                        ? 'bg-violet-600 w-8'
+                                        : 'bg-slate-300 hover:bg-slate-400 w-2.5'
                                 }`}
                             />
                         ))}
@@ -139,19 +145,9 @@ const IndependenceDayTestimonials = () => {
 
                     <button
                         onClick={nextSlide}
-                        className='bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-110'
+                        className='bg-violet-600 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-110'
                     >
                         <ChevronRight size={24} />
-                    </button>
-                </div>
-
-                {/* Auto-play indicator */}
-                <div className='text-center mt-4'>
-                    <button
-                        onClick={() => setAutoPlay(!autoPlay)}
-                        className='text-xs text-slate-500 hover:text-slate-700 transition-colors'
-                    >
-                        {autoPlay ? '⏸️ Auto-playing' : '▶️ Paused'}
                     </button>
                 </div>
             </div>

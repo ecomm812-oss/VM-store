@@ -58,22 +58,32 @@ const ProductCard = ({ product }) => {
             ? Math.round(product.rating.reduce((acc, curr) => acc + curr.rating, 0) / product.rating.length)
             : 0), [product.averageRating, product.rating])
 
+    const badgeText = rating >= 4 ? 'Popular' : 'New'
+
     return (
-        <Link href={`/product/${product.id}`} className='group w-full sm:w-52 lg:w-60 mx-auto animate-fadeInUp stagger-item'>
-            <div className='relative bg-[#F5F5F5] w-full aspect-square rounded-lg overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:bg-white card-animate'>
-                <Image fill sizes="(max-width: 640px) 100%, (max-width: 1024px) 208px, 240px" className='object-cover group-hover:scale-115 transition duration-300' src={imageSrc} alt={product.name || 'Product image'} />
-            </div>
-            <div className='flex justify-between gap-2 sm:gap-3 text-xs sm:text-sm text-slate-800 pt-2 w-full transition-all duration-300'>
-                <div className='transition-all duration-300 group-hover:text-slate-900 flex-1 min-w-0'>
-                    <p className='font-medium truncate'>{product.name}</p>
-                    <div className='flex gap-0.5'>
-                        {Array(5).fill('').map((_, index) => (
-                            <StarIcon key={index} size={12} className='text-transparent transition-transform duration-300 group-hover:scale-110 flex-shrink-0' fill={rating >= index + 1 ? "#00C950" : "#D1D5DB"} />
-                        ))}
+        <Link href={`/product/${product.id}`} className='group block w-full max-w-[280px] mx-auto animate-fadeInUp stagger-item'>
+            <div className='relative w-full rounded-[26px] border border-slate-200 bg-white p-2 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-[0_18px_45px_rgba(79,70,229,0.12)] card-animate'>
+                <div className='relative overflow-hidden rounded-[20px] bg-slate-100 aspect-square'>
+                    <div className='absolute left-3 top-3 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-700 shadow-sm backdrop-blur-sm'>
+                        {badgeText}
                     </div>
-                    <p className='text-xs text-slate-500 mt-1'>{ratingCount} reviews</p>
+                    <Image fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 280px" className='object-cover transition duration-500 group-hover:scale-110' src={imageSrc} alt={product.name || 'Product image'} />
                 </div>
-                <p className='font-semibold transition-colors duration-300 group-hover:text-green-600 flex-shrink-0'>{currency}{product.price}</p>
+                <div className='flex justify-between gap-2 sm:gap-3 text-xs sm:text-sm text-slate-800 pt-3 w-full transition-all duration-300'>
+                    <div className='transition-all duration-300 group-hover:text-slate-900 flex-1 min-w-0'>
+                        <p className='font-semibold truncate text-slate-800'>{product.name}</p>
+                        <div className='flex items-center gap-1 mt-1'>
+                            {Array(5).fill('').map((_, index) => (
+                                <StarIcon key={index} size={12} className='transition-transform duration-300 group-hover:scale-110 flex-shrink-0' fill={rating >= index + 1 ? '#FBBF24' : '#E2E8F0'} stroke={rating >= index + 1 ? '#F59E0B' : '#CBD5E1'} />
+                            ))}
+                            <span className='ml-1 text-[10px] font-medium text-slate-500'>{ratingCount}</span>
+                        </div>
+                    </div>
+                    <div className='flex flex-col items-end flex-shrink-0'>
+                        <p className='font-black text-slate-900'>{currency}{product.price}</p>
+                        <span className='mt-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700'>In stock</span>
+                    </div>
+                </div>
             </div>
         </Link>
     )
