@@ -127,7 +127,9 @@ const ProductDescription = ({ product }) => {
                 <div className="flex gap-3 mt-14">
                     <Image src={safeProduct.store.logo || '/placeholder.png'} alt="" className="size-11 rounded-full ring ring-slate-400" width={100} height={100} />
                     <div>
-                        <Link href={`/shop/${safeProduct.store.username || ''}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
+                        {safeProduct.store.username ? (
+                            <Link href={`/shop/${encodeURIComponent(safeProduct.store.username)}`} className="flex items-center gap-1.5 text-green-500"> view store <ArrowRight size={14} /></Link>
+                        ) : null}
                     </div>
                 </div>
             )}
