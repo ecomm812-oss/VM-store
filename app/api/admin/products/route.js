@@ -2,9 +2,8 @@ import { NextResponse, revalidatePath } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isAdminUser, createSecureErrorResponse } from '@/lib/security'
 
-// Cache product listings for 1 minute
 const CACHE_HEADERS = {
-    'Cache-Control': 'private, max-age=60, s-maxage=300'
+    'Cache-Control': 'no-store'
 }
 
 export async function GET() {
@@ -80,6 +79,10 @@ async function updateProduct(request) {
 
     if (!productId || (typeof inStock !== 'boolean' && typeof price !== 'number')) {
         return createSecureErrorResponse('product update', 400)
+    }
+
+    if (typeof price === 'number' && (!Number.isFinite(price) || price < 0)) {
+        return createSecureErrorResponse('product price', 400)
     }
 
     const updateData = {}

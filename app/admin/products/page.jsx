@@ -57,7 +57,7 @@ export default function AdminProductsPage() {
     const updatePrice = async (productId, rawValue) => {
         const price = Number(rawValue)
 
-        if (Number.isNaN(price) || price < 0) {
+        if (!Number.isFinite(price) || price < 0) {
             toast.error('Enter a valid price')
             return
         }
