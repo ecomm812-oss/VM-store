@@ -114,7 +114,6 @@ const HeroIndependenceDay = () => {
                 <p className='text-center text-sm sm:text-lg md:text-xl font-semibold text-slate-800 max-w-3xl mx-auto px-2'>
                     “Fresh picks, smarter savings, and standout essentials for the season.”
                 </p>
-                <p className='text-center text-xs sm:text-sm text-slate-600 mt-3 sm:mt-4'>Offer valid till August 09, 2026</p>
             </div>
 
             <CategoriesMarquee />
